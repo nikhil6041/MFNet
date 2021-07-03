@@ -3,7 +3,7 @@ import datetime
 import time
 import pandas as pd
 import numpy as np
-
+import os 
 import torch
 import torch.optim as optim
 from torch.nn.modules.distance import PairwiseDistance
@@ -32,8 +32,7 @@ parser.add_argument('--margin', default=0.5, required=True,type=float,
                     help='margin (default: 0.5)')
 parser.add_argument('--root-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled',
                     help='path to train root dir')
-parser.add_argument('--save-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled',
-                    help='path to save dir')
+parser.add_argument('--save-dir',type = str, default='D:\Academics\HonsProject1',help='path to save dir')
 parser.add_argument('--val-size' , type=float , default=0.2,help='validation split ratio(default:0.2)')
 parser.add_argument('--test-size' , type=float, default=0.2,help='test split ratio(default:0.2)')
 parser.add_argument('--step-size', default=10, type=int,
@@ -87,7 +86,9 @@ def main():
     print("Freeze only:", ', '.join(freeze))
     print(f"Max acc: {max_acc:.4f}")
     print(f"Learning rate will decayed every {args.step_size}th epoch")
-
+    print("Save dir",save_dir)
+    print("Last checkpoint name",args.last_ckpt_name)
+    print("Best checkpoint name",args.best_ckpt_name)
     model = FaceNetModel(pretrained=pretrain)
     model.to(device)
 
@@ -153,7 +154,7 @@ def save_last_checkpoint(state,dir,ckptname):
 
 
 def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data_size,dir):
-    for phase in ['train', 'val','test']:
+    for phase in ['train', 'val']:
 
         labels, distances = [], []
         triplet_loss_sum = 0.0
@@ -229,6 +230,7 @@ def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data
         print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_triplet_loss))
         print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
 
+     
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lr = '_'.join(map(str, scheduler.get_last_lr()))
         layers = '+'.join(args.unfreeze.split(','))
@@ -252,7 +254,7 @@ def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data
                           np.mean(accuracy),
                           dir,
                           args.best_ckpt_name)
-        elif phase == 'train':
+        else:
             plot_roc(fpr, tpr, figure_name='./log/roc_valid_epoch_{}.png'.format(epoch))
 
 

@@ -172,7 +172,7 @@ def get_dataloader(root_dir,val_size,
     }
 
     dataloaders = {
-        x: torch.utils.data.DataLoader(face_dataset, batch_size=batch_size, sampler = face_dataset_sampler[x] , num_workers=num_workers)
+        x: torch.utils.data.DataLoader(face_dataset, batch_size=batch_size, sampler = face_dataset_sampler[x] , num_workers=num_workers,drop_last = True)
         for x in ['train', 'val','test']}
 
     data_size = {x: len(face_dataset_indices[x]) for x in ['train', 'val','test']}
