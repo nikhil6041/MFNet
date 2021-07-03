@@ -77,6 +77,7 @@ def main():
     train_all = args.train_all
     unfreeze = args.unfreeze.split(',')
     freeze = args.freeze.split(',')
+    save_dir = args.save_dir
     start_epoch = 0
     print(f"Transfer learning: {pretrain}")
     print("Train fc only:", fc_only)
@@ -142,7 +143,7 @@ def main():
                                                  args.num_triplets,
                                                  args.batch_size, args.num_workers)
 
-        train_valid(model, optimizer, triplet_loss, scheduler, epoch, data_loaders, data_size)
+        train_valid(model, optimizer, triplet_loss, scheduler, epoch, data_loaders, data_size,save_dir)
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
 
@@ -151,7 +152,7 @@ def save_last_checkpoint(state,dir,ckptname):
     torch.save(state, os.path.join(dir,ckptname))
 
 
-def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data_size):
+def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data_size,dir):
     for phase in ['train', 'val','test']:
 
         labels, distances = [], []
