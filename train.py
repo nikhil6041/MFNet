@@ -3,6 +3,7 @@ import datetime
 import time
 import pandas as pd
 import numpy as np
+
 import torch
 import torch.optim as optim
 from torch.nn.modules.distance import PairwiseDistance
@@ -14,47 +15,52 @@ from loss import TripletLoss
 from model import FaceNetModel
 from utils import ModelSaver, init_log_just_created,write_csv
 
+
 parser = argparse.ArgumentParser(description='Face Recognition using Triplet Loss')
 
-parser.add_argument('--num-epochs', default=200, type=int, metavar='NE',
+parser.add_argument('--num-epochs', default=200,required=True, type=int,
                     help='number of epochs to train (default: 200)')
-parser.add_argument('--num-triplets', default=10000, type=int, metavar='NTT',
+parser.add_argument('--num-triplets', default=10000,required=True, type=int,
                     help='number of triplets for training (default: 10000)')
-parser.add_argument('--batch-size', default=8, type=int, metavar='BS',
+parser.add_argument('--batch-size', default=8,required=True, type=int, 
                     help='batch size (default: 128)')
-parser.add_argument('--num-workers', default=0, type=int, metavar='NW',
+parser.add_argument('--num-workers', default=0, type=int,
                     help='number of workers (default: 0)')
-parser.add_argument('--learning-rate', default=0.001, type=float, metavar='LR',
+parser.add_argument('--learning-rate', default=0.001,required=True, type=float,
                     help='learning rate (default: 0.001)')
-parser.add_argument('--margin', default=0.5, type=float, metavar='MG',
+parser.add_argument('--margin', default=0.5, required=True,type=float, 
                     help='margin (default: 0.5)')
-parser.add_argument('--root-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled', type=str,metavar='root_dir',
+parser.add_argument('--root-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled', required=True,
                     help='path to train root dir')
-parser.add_argument('--val-size' , type=float ,metavar='vs', default=0.2,help='validation split ratio(default:0.2)')
-parser.add_argument('--test-size' , type=float ,metavar='ts', default=0.2,help='test split ratio(default:0.2)')
+parser.add_argument('--save-dir',type = str, required=True,
+                    help='path to save dir')
+parser.add_argument('--val-size' , type=float , default=0.2,help='validation split ratio(default:0.2)')
+parser.add_argument('--test-size' , type=float, default=0.2,help='test split ratio(default:0.2)')
 parser.add_argument('--step-size', default=10, type=int, metavar='SZ',
                     help='Decay learning rate schedules every --step-size (default: 50)')
-parser.add_argument('--unfreeze', type=int, metavar='UF', default='',
+parser.add_argument('--unfreeze', type=int,  default='',
                     help='Provide an option for unfreezeing given layers')
-parser.add_argument('--freeze', type=int, metavar='F', default='',
+parser.add_argument('--freeze', type=int, default='',
                     help='Provide an option for freezeing given layers')
-parser.add_argument('--pretrain_checkpoint',metavar = 'pckpt',default='casia-webface' ,action='store_true')
-parser.add_argument('--fc-only',type=bool,default= False, action='store_true')
-parser.add_argument('--except-fc',type = bool,default=False, action='store_true')
-parser.add_argument('--load-best',type=bool,default=True, action='store_true')
-parser.add_argument('--load-last',type=bool,default=True, action='store_true')
-parser.add_argument('--continue-step',type=bool,default=False, action='store_true')
-parser.add_argument('--train-all', type=bool,action='store_true',default=True, help='Train all layers')
+parser.add_argument('--pretrain_checkpoint',default='casia-webface' ,type=str,help='Pretrained checkpoints casia-webface or vggface2')
+parser.add_argument('--fc-only',default= False, action='store_true',help='Train fc only')
+parser.add_argument('--except-fc',default=False, action='store_true',help='Train the base except fc layer')
+parser.add_argument('--load-best',default=True, action='store_true',help='Load the best checkpoint')
+parser.add_argument('--load-last',default=True, action='store_true',help='Load the last checkpoint')
+parser.add_argument('--continue-step',default=False, action='store_true',help='resume training from last checkpoint')
+parser.add_argument('--train-all', action='store_true',default=True, help='Train all layers')
 
 args = parser.parse_args()
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(args)
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 l2_dist = PairwiseDistance(2)
+
 modelsaver = ModelSaver()
 
-
-def save_if_best(state, acc):
-    modelsaver.save_if_best(acc, state)
-
+def save_if_best(state, acc,dir):
+    modelsaver.save_if_best(acc, state,dir)
 
 def main():
     init_log_just_created("log/valid.csv")
@@ -78,8 +84,11 @@ def main():
     print("Freeze only:", ', '.join(freeze))
     print(f"Max acc: {max_acc:.4f}")
     print(f"Learning rate will decayed every {args.step_size}th epoch")
+
     model = FaceNetModel(pretrained=pretrain)
     model.to(device)
+
+
     triplet_loss = TripletLoss(args.margin).to(device)
 
     if fc_only:
@@ -94,16 +103,20 @@ def main():
         model.freeze_only(freeze)
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.learning_rate)
+
     scheduler = lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=0.1)
 
     if args.load_best or args.load_last:
-        checkpoint = './log/best_state.pth' if args.load_best else './log/last_checkpoint.pth'
-        print('loading', checkpoint)
-        checkpoint = torch.load(checkpoint)
-        modelsaver.current_acc = max_acc
-        start_epoch = checkpoint['epoch'] + 1
-        model.load_state_dict(checkpoint['state_dict'])
-        print("Stepping scheduler")
+        try:
+            checkpoint = './log/best_state.pth' if args.load_best else './log/last_checkpoint.pth'
+            print('loading', checkpoint)
+            checkpoint = torch.load(checkpoint)
+            modelsaver.current_acc = max_acc
+            start_epoch = checkpoint['epoch'] + 1
+            model.load_state_dict(checkpoint['state_dict'])
+        except ValueError as e:
+            print("Can't load last checkpoint")
+            print(e)
         try:
             optimizer.load_state_dict(checkpoint['optimizer_state'])
         except ValueError as e:
@@ -115,8 +128,8 @@ def main():
               f"Loaded checkpoint accuracy: {checkpoint['accuracy']}\n"
               f"Loaded checkpoint loss: {checkpoint['loss']}")
 
-    if torch.cuda.device_count() > 1:
-        model = torch.nn.DataParallel(model)
+
+    model = torch.nn.DataParallel(model)
     
     for epoch in range(start_epoch, args.num_epochs + start_epoch):
         print(120 * '=')
@@ -132,11 +145,11 @@ def main():
     print(120 * '=')
 
 
-def save_last_checkpoint(state):
-    torch.save(state, 'log/last_checkpoint.pth')
+def save_last_checkpoint(state,dir):
+    torch.save(state, os.path.join(dir,'last_checkpoint.pth'))
 
 
-def train_valid(model, optimizer, triploss, scheduler, epoch, dataloaders, data_size):
+def train_valid(model, optimizer, triplet_loss, scheduler, epoch, dataloaders, data_size):
     for phase in ['train', 'valid']:
 
         labels, distances = [], []
@@ -153,9 +166,7 @@ def train_valid(model, optimizer, triploss, scheduler, epoch, dataloaders, data_
             pos_img = batch_sample['pos_img'].to(device)
             neg_img = batch_sample['neg_img'].to(device)
 
-            # pos_cls = batch_sample['pos_class'].to(device)
-            # neg_cls = batch_sample['neg_class'].to(device)
-
+       
             with torch.set_grad_enabled(phase == 'train'):
 
                 # anc_embed, pos_embed and neg_embed are encoding(embedding) of image
@@ -181,14 +192,12 @@ def train_valid(model, optimizer, triploss, scheduler, epoch, dataloaders, data_
                 pos_hard_img = pos_img[hard_triplets]
                 neg_hard_img = neg_img[hard_triplets]
 
-                # pos_hard_cls = pos_cls[hard_triplets]
-                # neg_hard_cls = neg_cls[hard_triplets]
-
+            
                 model.module.forward_classifier(anc_hard_img)
                 model.module.forward_classifier(pos_hard_img)
                 model.module.forward_classifier(neg_hard_img)
 
-                triplet_loss = triploss.forward(anc_hard_embed, pos_hard_embed, neg_hard_embed)
+                triplet_loss = triplet_loss.forward(anc_hard_embed, pos_hard_embed, neg_hard_embed)
 
                 if phase == 'train':
                     optimizer.zero_grad()
@@ -204,22 +213,23 @@ def train_valid(model, optimizer, triploss, scheduler, epoch, dataloaders, data_
                 triplet_loss_sum += triplet_loss.item()
 
         if phase == 'train':
+            print("Stepping LR")
             scheduler.step()
             if scheduler.last_epoch % scheduler.step_size == 0:
-                print("LR decayed to:", ', '.join(map(str, scheduler.get_lr())))
+                print("LR decayed to:", ', '.join(map(str, scheduler.get_last_lr())))
     
         avg_triplet_loss = triplet_loss_sum / data_size[phase]
         labels = np.array([sublabel for label in labels for sublabel in label])
         distances = np.array([subdist for dist in distances for subdist in dist])
 
-        tpr, fpr, accuracy, val, val_std, far = evaluate(distances, labels)
+        tpr, fpr, accuracy, val, val_std, far,threshold = evaluate(distances, labels)
         print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_triplet_loss))
         print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
 
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        lr = '_'.join(map(str, scheduler.get_lr()))
+        lr = '_'.join(map(str, scheduler.get_last_lr()))
         layers = '+'.join(args.unfreeze.split(','))
-        write_csv(f'log/{phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, layers, args.batch_size, lr])
+        write_csv(f'log/{phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, layers, args.batch_size, lr,threshold])
 
         if phase == 'valid':
             save_last_checkpoint({'epoch': epoch,
@@ -227,7 +237,8 @@ def train_valid(model, optimizer, triploss, scheduler, epoch, dataloaders, data_
                                   'optimizer_state': optimizer.state_dict(),
                                   'accuracy': np.mean(accuracy),
                                   'loss': avg_triplet_loss
-                                  })
+                                  },
+                                  dir)
             save_if_best({'epoch': epoch,
                           'state_dict': model.module.state_dict(),
                           'optimizer_state': optimizer.state_dict(),

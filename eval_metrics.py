@@ -6,12 +6,12 @@ from sklearn.model_selection import KFold
 def evaluate(distances, labels, nrof_folds=10):
     # Calculate evaluation metrics
     thresholds = np.arange(0.3, 5, 0.1)
-    tpr, fpr, accuracy = calculate_roc(thresholds, distances,
+    tpr, fpr, accuracy,threshold = calculate_roc(thresholds, distances,
                                        labels, nrof_folds=nrof_folds)
     thresholds = np.arange(0, 30, 0.001)
     val, val_std, far = calculate_val(thresholds, distances,
                                       labels, 1e-3, nrof_folds=nrof_folds)
-    return tpr, fpr, accuracy, val, val_std, far
+    return tpr, fpr, accuracy, val, val_std, far,threshold
 
 
 def calculate_roc(thresholds, distances, labels, nrof_folds=10):
@@ -41,7 +41,7 @@ def calculate_roc(thresholds, distances, labels, nrof_folds=10):
 
         tpr = np.mean(tprs, 0)
         fpr = np.mean(fprs, 0)
-    return tpr, fpr, accuracy
+    return tpr, fpr, accuracy,threshold[best_threshold_index]
 
 
 def calculate_accuracy(threshold, dist, actual_issame):

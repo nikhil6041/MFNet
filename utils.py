@@ -2,14 +2,24 @@ import numpy as np
 import torch
 import visdom
 from path import Path
+import csv
+import pandas as pd
+import os
+from collections import defaultdict
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from matplotlib.ticker import MaxNLocator
+import cv2
+
 
 def train_epoch(
-  model, 
-  data_loader, 
-  criterion, 
-  optimizer, 
-  device, 
-  n_examples
+    model,
+    data_loader,
+    criterion,
+    optimizer,
+    device,
+    n_examples
 ):
     model = model.train()
 
@@ -18,19 +28,18 @@ def train_epoch(
 
     print(f'Doing training on {n_examples} samples')
 
-    for batch_idx , (b_images,b_labels) in enumerate(data_loader):
+    for batch_idx, (b_images, b_labels) in enumerate(data_loader):
 
-        if batch_idx%10 == 0:
+        if batch_idx % 10 == 0:
             print(f' Processing batch {batch_idx+1}/{len(data_loader)} ')
 
         b_images = b_images.to(device)
         b_labels = b_labels.to(device)
 
-
         outputs = model(b_images)
         _, b_preds = torch.max(outputs, 1)
-        
-        loss = criterion(outputs,b_labels)
+
+        loss = criterion(outputs, b_labels)
 
         correct_predictions += torch.sum(b_preds == b_labels)
 
@@ -41,16 +50,17 @@ def train_epoch(
         optimizer.zero_grad()
 
     accuracy = correct_predictions.double() / n_examples
-    loss = round(np.mean(losses),2)
+    loss = round(np.mean(losses), 2)
 
-    return accuracy , loss
+    return accuracy, loss
+
 
 def eval_model(
-    model, 
-    data_loader,
-    criterion,
-    device,
-    n_examples):
+        model,
+        data_loader,
+        criterion,
+        device,
+        n_examples):
     model = model.eval()
 
     losses = []
@@ -60,43 +70,43 @@ def eval_model(
 
     with torch.no_grad():
 
-        for batch_idx , (b_images,b_labels) in enumerate(data_loader):
+        for batch_idx, (b_images, b_labels) in enumerate(data_loader):
 
-            if batch_idx%10 == 0:
+            if batch_idx % 10 == 0:
                 print(f' Processing batch {batch_idx+1}/{len(data_loader)} ')
 
             b_images = b_images.to(device)
             b_labels = b_labels.to(device)
-
 
             outputs = model(b_images)
             _, b_preds = torch.max(outputs, 1)
 
             # print(b_preds.size())
             # print(b_labels.size())
-            
-            loss = criterion(outputs,b_labels)
+
+            loss = criterion(outputs, b_labels)
 
             correct_predictions += torch.sum(b_preds == b_labels)
 
             losses.append(loss.item())
-    
+
     accuracy = correct_predictions.double() / n_examples
-    loss = round(np.mean(losses),2)
-    
-    return accuracy , loss
+    loss = round(np.mean(losses), 2)
+
+    return accuracy, loss
+
 
 def train_model(
-    model,
-    train_data_loader,
-    val_data_loader, 
-    train_dataset_size,
-    val_dataset_size,
-    optimizer,
-    criterion,
-    scheduler,
-    device, 
-    n_epochs=3):
+        model,
+        train_data_loader,
+        val_data_loader,
+        train_dataset_size,
+        val_dataset_size,
+        optimizer,
+        criterion,
+        scheduler,
+        device,
+        n_epochs=3):
 
     history = defaultdict(list)
 
@@ -109,27 +119,29 @@ def train_model(
         print('-' * 10)
 
         train_acc, train_loss = train_epoch(
-                                    model, 
-                                    train_data_loader, 
-                                    criterion, 
-                                    optimizer, 
-                                    device, 
-                                    train_dataset_size
-                                )
+            model,
+            train_data_loader,
+            criterion,
+            optimizer,
+            device,
+            train_dataset_size
+        )
 
-        print("Train loss {:.2f} accuracy {:.2f}".format(train_loss,train_acc))
+        print("Train loss {:.2f} accuracy {:.2f}".format(
+            train_loss, train_acc))
 
         val_acc, val_loss = eval_model(
-                                    model, 
-                                    val_data_loader, 
-                                    criterion, 
-                                    device, 
-                                    val_dataset_size
+            model,
+            val_data_loader,
+            criterion,
+            device,
+            val_dataset_size
 
-                            )
+        )
 
-        print("Validation  loss {:.2f} accuracy {:.2f}".format(val_loss,val_acc))
-        
+        print("Validation  loss {:.2f} accuracy {:.2f}".format(
+            val_loss, val_acc))
+
         print()
 
         scheduler.step(val_loss)
@@ -149,20 +161,22 @@ def train_model(
 
     return model, history
 
-def visualize_images(path,n_samples):
+
+def visualize_images(path, n_samples):
     '''
         path: expects list of paths to images or a single image's path
     '''
     cnt = 0
-    for root,dirs,files in os.walk(path):
+    for root, dirs, files in os.walk(path):
         for fname in files:
             if cnt == n_samples:
                 return
-            path = os.path.join(root,fname)
+            path = os.path.join(root, fname)
             img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
             cv2_imshow(img)
-          
+
             cnt += 1
+
 
 def plot_training_history(history):
   fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6))
@@ -187,6 +201,7 @@ def plot_training_history(history):
 
   fig.suptitle('Training history')
 
+
 def show_confusion_matrix(confusion_matrix, class_names):
 
   cm = confusion_matrix.copy()
@@ -195,24 +210,30 @@ def show_confusion_matrix(confusion_matrix, class_names):
 
   cm_row_norm = cm / cm.sum(axis=1)[:, np.newaxis]
 
-  row_percentages = ["{0:.2f}".format(value) for value in cm_row_norm.flatten()]
+  row_percentages = ["{0:.2f}".format(value)
+                     for value in cm_row_norm.flatten()]
 
-  cell_labels = [f"{cnt}\n{per}" for cnt, per in zip(cell_counts, row_percentages)]
+  cell_labels = [f"{cnt}\n{per}" for cnt,
+                 per in zip(cell_counts, row_percentages)]
   cell_labels = np.asarray(cell_labels).reshape(cm.shape[0], cm.shape[1])
 
   df_cm = pd.DataFrame(cm_row_norm, index=class_names, columns=class_names)
 
   hmap = sns.heatmap(df_cm, annot=cell_labels, fmt="", cmap="Blues")
-  hmap.yaxis.set_ticklabels(hmap.yaxis.get_ticklabels(), rotation=0, ha='right')
-  hmap.xaxis.set_ticklabels(hmap.xaxis.get_ticklabels(), rotation=30, ha='right')
+  hmap.yaxis.set_ticklabels(
+      hmap.yaxis.get_ticklabels(), rotation=0, ha='right')
+  hmap.xaxis.set_ticklabels(
+      hmap.xaxis.get_ticklabels(), rotation=30, ha='right')
   plt.ylabel('True Sign')
-  plt.xlabel('Predicted Sign');
+  plt.xlabel('Predicted Sign')
 
 
 def write_csv(file, newrow):
     with open(file, mode='a') as f:
-        f_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        f_writer = csv.writer(
+            f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         f_writer.writerow(newrow)
+
 
 class ModelSaver():
 
@@ -239,15 +260,16 @@ class ModelSaver():
     def __set_accuracy(self, accuracy):
         self.previous_acc, self.current_acc = self.current_acc, accuracy
 
-    def save_if_best(self, accuracy, state):
+    def save_if_best(self, accuracy, state,dir):
         if accuracy > self.current_acc:
             self.__set_accuracy(accuracy)
-            torch.save(state, 'log/best_state.pth')
+            torch.save(state, os.path.join(dir,'best_state.pth'))
 
 
 def create_if_not_exist(path):
     path = Path(path)
-    if not path.exists(): path.touch()
+    if not path.exists():
+        path.touch()
 
 
 def init_log_just_created(path):
@@ -282,6 +304,3 @@ class VisdomLinePlotter(object):
         else:
             self.viz.line(X=np.array([x]), Y=np.array([y]), env=self.env, win=self.plots[var_name],
                           name=split_name, update='append')
-
-  
-
