@@ -45,8 +45,8 @@ parser.add_argument('--freeze', type=str, default='',
 parser.add_argument('--pretrain_checkpoint',default='casia-webface' ,type=str,help='Pretrained checkpoints casia-webface or vggface2')
 parser.add_argument('--fc-only',default= False, action='store_true',help='Train fc only')
 parser.add_argument('--except-fc',default=False, action='store_true',help='Train the base except fc layer')
-parser.add_argument('--load-best',default=True, action='store_true',help='Load the best checkpoint')
-parser.add_argument('--load-last',default=True, action='store_true',help='Load the last checkpoint')
+parser.add_argument('--load-best',default=False, action='store_true',help='Load the best checkpoint')
+parser.add_argument('--load-last',default=False, action='store_true',help='Load the last checkpoint')
 parser.add_argument('--continue-step',default=False, action='store_true',help='resume training from last checkpoint')
 parser.add_argument('--train-all', action='store_true',default=True, help='Train all layers')
 parser.add_argument('--last_ckpt_name',required=True,help='Last checkpoint name')
@@ -150,7 +150,7 @@ def save_last_checkpoint(state,dir,ckptname):
     torch.save(state, os.path.join(dir,ckptname))
 
 
-def train_valid(model, optimizer, triplet_loss, scheduler, epoch, dataloaders, data_size):
+def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data_size):
     for phase in ['train', 'valid']:
 
         labels, distances = [], []
@@ -198,7 +198,7 @@ def train_valid(model, optimizer, triplet_loss, scheduler, epoch, dataloaders, d
                 model.module.forward_classifier(pos_hard_img)
                 model.module.forward_classifier(neg_hard_img)
 
-                triplet_loss = triplet_loss.forward(anc_hard_embed, pos_hard_embed, neg_hard_embed)
+                triplet_loss = trip_loss.forward(anc_hard_embed, pos_hard_embed, neg_hard_embed)
 
                 if phase == 'train':
                     optimizer.zero_grad()
