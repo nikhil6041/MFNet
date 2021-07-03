@@ -49,7 +49,8 @@ parser.add_argument('--load-best',default=True, action='store_true',help='Load t
 parser.add_argument('--load-last',default=True, action='store_true',help='Load the last checkpoint')
 parser.add_argument('--continue-step',default=False, action='store_true',help='resume training from last checkpoint')
 parser.add_argument('--train-all', action='store_true',default=True, help='Train all layers')
-
+parser.add_argument('--last_ckpt_name',required=True,help='Last checkpoint name')
+parser.add_argument('--best_ckpt_name',required=True,help='Best checkpoint name')
 args = parser.parse_args()
 print(args)
 
@@ -238,13 +239,17 @@ def train_valid(model, optimizer, triplet_loss, scheduler, epoch, dataloaders, d
                                   'accuracy': np.mean(accuracy),
                                   'loss': avg_triplet_loss
                                   },
-                                  dir)
+                                  dir,
+                                  args.last_ckpt_name)
             save_if_best({'epoch': epoch,
                           'state_dict': model.module.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
                           'accuracy': np.mean(accuracy),
                           'loss': avg_triplet_loss
-                          }, np.mean(accuracy))
+                          }, 
+                          np.mean(accuracy),
+                          dir,
+                          args.best_ckpt_name)
         else:
             plot_roc(fpr, tpr, figure_name='./log/roc_valid_epoch_{}.png'.format(epoch))
 
