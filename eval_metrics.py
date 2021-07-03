@@ -4,55 +4,75 @@ from sklearn.model_selection import KFold
 
 
 def evaluate(distances, labels, nrof_folds=10):
-    # Calculate evaluation metrics
+    '''
+        This function does the calculation of usefule metrics which we need to find out tpr,fpr , accuracy and other metrics with different thresholds applied
+    '''
+
     thresholds = np.arange(0.3, 5, 0.1)
-    tpr, fpr, accuracy,threshold = calculate_roc(thresholds, distances,
+    ## calculation of tpr , fpr and accuracy from the roc curve
+    tpr, fpr, accuracy = calculate_roc(thresholds, distances,
                                        labels, nrof_folds=nrof_folds)
+
     thresholds = np.arange(0, 30, 0.001)
+    ## calculation of variance , standard deviation and false acceptance rate 
     val, val_std, far = calculate_val(thresholds, distances,
                                       labels, 1e-3, nrof_folds=nrof_folds)
-    return tpr, fpr, accuracy, val, val_std, far,threshold
+    return tpr, fpr, accuracy, val, val_std, far
 
 
 def calculate_roc(thresholds, distances, labels, nrof_folds=10):
-    nrof_pairs = min(len(labels), len(distances))
-    nrof_thresholds = len(thresholds)
-    k_fold = KFold(n_splits=nrof_folds, shuffle=False)
+    """
+       We use the n_folds split to calcuate roc since doing the calculation all at once wont be feasible if we have large number of triplets
+    """
+    nrof_pairs = min(len(labels), len(distances)) ## no. of pairs to be used for comparison
+    nrof_thresholds = len(thresholds)             ## the no. of thresholds being used
+    k_fold = KFold(n_splits=nrof_folds, shuffle=False)  ## initializing the KFold split 
 
-    tprs = np.zeros((nrof_folds, nrof_thresholds))
+    ## initializing numpy arrays for calculation of tpr,fpr and accuracy
+    tprs = np.zeros((nrof_folds, nrof_thresholds))  
     fprs = np.zeros((nrof_folds, nrof_thresholds))
     accuracy = np.zeros((nrof_folds))
 
+    ## creating and indices array for the list of pairs
     indices = np.arange(nrof_pairs)
 
     for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
 
         # Find the best threshold for the fold
         acc_train = np.zeros((nrof_thresholds))
+        
+        ## finding the best threshold index
         for threshold_idx, threshold in enumerate(thresholds):
             _, _, acc_train[threshold_idx] = calculate_accuracy(threshold, distances[train_set], labels[train_set])
+        
         best_threshold_index = np.argmax(acc_train)
+        
+        ## calcuating the tpr,fpr for the given fold
         for threshold_idx, threshold in enumerate(thresholds):
             tprs[fold_idx, threshold_idx], fprs[fold_idx, threshold_idx], _ = calculate_accuracy(threshold,
                                                                                                  distances[test_set],
                                                                                                  labels[test_set])
+        ## calcuating the accuracy for the given fold
         _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], distances[test_set],
                                                       labels[test_set])
 
         tpr = np.mean(tprs, 0)
         fpr = np.mean(fprs, 0)
-    return tpr, fpr, accuracy,threshold[best_threshold_index]
 
+    return tpr, fpr, accuracy
 
 def calculate_accuracy(threshold, dist, actual_issame):
-    predict_issame = np.less(dist, threshold)
-    tp = np.sum(np.logical_and(predict_issame, actual_issame))
-    fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
-    tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame)))
-    fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame))
+    """
+        This function does the accuracy calculation by taking the distances , labels and the threshold as its arguments
+    """
+    predict_issame = np.less(dist, threshold)  ## compares two inputs elementwise and return their results in boolean form
+    tp = np.sum(np.logical_and(predict_issame, actual_issame)) ## calculation of the true positives 
+    fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame))) ## calcualtion of the false positives
+    tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame))) ## calculation of the true negatives
+    fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame)) ## calculation of the false negatives
 
-    tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn)
-    fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn)
+    tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn) ## finding out the true positive rate
+    fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn) ## finding out the false positive rate
     acc = float(tp + tn) / dist.size
     return tpr, fpr, acc
 
@@ -88,11 +108,14 @@ def calculate_val(thresholds, distances, labels, far_target=1e-3, nrof_folds=10)
 
 
 def calculate_val_far(threshold, dist, actual_issame):
-    predict_issame = np.less(dist, threshold)
-    true_accept = np.sum(np.logical_and(predict_issame, actual_issame))
-    false_accept = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
-    n_same = np.sum(actual_issame)
-    n_diff = np.sum(np.logical_not(actual_issame))
+    '''
+    This function calculates and returns the true positve rate and false positive rate with the given threshold applied
+    '''
+    predict_issame = np.less(dist, threshold) ## compares two inputs elementwise and return their results in boolean form
+    true_accept = np.sum(np.logical_and(predict_issame, actual_issame)) ## computes logical and of predicted and actual classes (True Accept Rate)
+    false_accept = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame))) ## computes logical and of predicted and negation of the actual classes (False Acceptance Rate)
+    n_same = np.sum(actual_issame)  ## computes actual number of true classes
+    n_diff = np.sum(np.logical_not(actual_issame)) ## computes actual number of not true classes
     if n_diff == 0:
         n_diff = 1
     if n_same == 0:
@@ -103,6 +126,9 @@ def calculate_val_far(threshold, dist, actual_issame):
 
 
 def plot_roc(fpr, tpr, figure_name="roc.png"):
+    """
+        This function plots the roc curve for the given values of tpr and fpr
+    """
     import matplotlib.pyplot as plt
     plt.switch_backend('Agg')
 

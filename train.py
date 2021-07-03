@@ -14,7 +14,7 @@ from eval_metrics import evaluate, plot_roc
 from loss import TripletLoss
 from model import FaceNetModel
 from utils import ModelSaver, init_log_just_created,write_csv
-
+from pprint import pprint as ppt
 
 parser = argparse.ArgumentParser(description='Face Recognition using Triplet Loss')
 
@@ -22,21 +22,21 @@ parser.add_argument('--num-epochs', default=200,required=True, type=int,
                     help='number of epochs to train (default: 200)')
 parser.add_argument('--num-triplets', default=10000,required=True, type=int,
                     help='number of triplets for training (default: 10000)')
-parser.add_argument('--batch-size', default=8,required=True, type=int, 
-                    help='batch size (default: 128)')
+parser.add_argument('--batch-size', default=32,required=True, type=int, 
+                    help='batch size (default: 32)')
 parser.add_argument('--num-workers', default=0, type=int,
                     help='number of workers (default: 0)')
 parser.add_argument('--learning-rate', default=0.001,required=True, type=float,
                     help='learning rate (default: 0.001)')
 parser.add_argument('--margin', default=0.5, required=True,type=float, 
                     help='margin (default: 0.5)')
-parser.add_argument('--root-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled', required=True,
+parser.add_argument('--root-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled',
                     help='path to train root dir')
-parser.add_argument('--save-dir',type = str, required=True,
+parser.add_argument('--save-dir',type = str, default='D:\Academics\HonsProject1\Labelled Faces In The Wild Dataset\lfw-deepfunneled\lfw-deepfunneled',
                     help='path to save dir')
 parser.add_argument('--val-size' , type=float , default=0.2,help='validation split ratio(default:0.2)')
 parser.add_argument('--test-size' , type=float, default=0.2,help='test split ratio(default:0.2)')
-parser.add_argument('--step-size', default=10, type=int, metavar='SZ',
+parser.add_argument('--step-size', default=10, type=int,
                     help='Decay learning rate schedules every --step-size (default: 50)')
 parser.add_argument('--unfreeze', type=str,  default='',
                     help='Provide an option for unfreezeing given layers')
@@ -52,6 +52,7 @@ parser.add_argument('--train-all', action='store_true',default=True, help='Train
 parser.add_argument('--last_ckpt_name',required=True,help='Last checkpoint name')
 parser.add_argument('--best_ckpt_name',required=True,help='Best checkpoint name')
 args = parser.parse_args()
+
 print(args)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -64,10 +65,10 @@ def save_if_best(state, acc,dir,ckptname):
     modelsaver.save_if_best(acc, state,dir,ckptname)
 
 def main():
-    init_log_just_created("log/valid.csv")
+    init_log_just_created("log/val.csv")
     init_log_just_created("log/train.csv")
     
-    valid = pd.read_csv('log/valid.csv')
+    valid = pd.read_csv('log/val.csv')
     max_acc = valid['acc'].max()
 
     pretrain = args.pretrain_checkpoint
@@ -151,7 +152,7 @@ def save_last_checkpoint(state,dir,ckptname):
 
 
 def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data_size):
-    for phase in ['train', 'valid']:
+    for phase in ['train', 'val','test']:
 
         labels, distances = [], []
         triplet_loss_sum = 0.0
@@ -194,9 +195,9 @@ def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data
                 neg_hard_img = neg_img[hard_triplets]
 
             
-                model.module.forward_classifier(anc_hard_img)
-                model.module.forward_classifier(pos_hard_img)
-                model.module.forward_classifier(neg_hard_img)
+                # model.module.forward_classifier(anc_hard_img)
+                # model.module.forward_classifier(pos_hard_img)
+                # model.module.forward_classifier(neg_hard_img)
 
                 triplet_loss = trip_loss.forward(anc_hard_embed, pos_hard_embed, neg_hard_embed)
 
@@ -223,16 +224,16 @@ def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data
         labels = np.array([sublabel for label in labels for sublabel in label])
         distances = np.array([subdist for dist in distances for subdist in dist])
 
-        tpr, fpr, accuracy, val, val_std, far,threshold = evaluate(distances, labels)
+        tpr, fpr, accuracy, val, val_std, far = evaluate(distances, labels)
         print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_triplet_loss))
         print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
 
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lr = '_'.join(map(str, scheduler.get_last_lr()))
         layers = '+'.join(args.unfreeze.split(','))
-        write_csv(f'log/{phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, layers, args.batch_size, lr,threshold])
+        write_csv(f'log/{phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, layers, args.batch_size, lr])
 
-        if phase == 'valid':
+        if phase == 'val':
             save_last_checkpoint({'epoch': epoch,
                                   'state_dict': model.module.state_dict(),
                                   'optimizer_state': optimizer.state_dict(),
@@ -250,7 +251,7 @@ def train_valid(model, optimizer, trip_loss, scheduler, epoch, dataloaders, data
                           np.mean(accuracy),
                           dir,
                           args.best_ckpt_name)
-        else:
+        elif phase == 'train':
             plot_roc(fpr, tpr, figure_name='./log/roc_valid_epoch_{}.png'.format(epoch))
 
 
