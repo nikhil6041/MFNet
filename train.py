@@ -59,8 +59,8 @@ l2_dist = PairwiseDistance(2)
 
 modelsaver = ModelSaver()
 
-def save_if_best(state, acc,dir):
-    modelsaver.save_if_best(acc, state,dir)
+def save_if_best(state, acc,dir,ckptname):
+    modelsaver.save_if_best(acc, state,dir,ckptname)
 
 def main():
     init_log_just_created("log/valid.csv")
@@ -145,8 +145,8 @@ def main():
     print(120 * '=')
 
 
-def save_last_checkpoint(state,dir):
-    torch.save(state, os.path.join(dir,'last_checkpoint.pth'))
+def save_last_checkpoint(state,dir,ckptname):
+    torch.save(state, os.path.join(dir,ckptname))
 
 
 def train_valid(model, optimizer, triplet_loss, scheduler, epoch, dataloaders, data_size):

@@ -260,10 +260,10 @@ class ModelSaver():
     def __set_accuracy(self, accuracy):
         self.previous_acc, self.current_acc = self.current_acc, accuracy
 
-    def save_if_best(self, accuracy, state,dir):
+    def save_if_best(self, accuracy, state,dir,ckptname):
         if accuracy > self.current_acc:
             self.__set_accuracy(accuracy)
-            torch.save(state, os.path.join(dir,'best_state.pth'))
+            torch.save(state, os.path.join(dir,ckptname))
 
 
 def create_if_not_exist(path):
