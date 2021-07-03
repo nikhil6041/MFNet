@@ -38,9 +38,9 @@ parser.add_argument('--val-size' , type=float , default=0.2,help='validation spl
 parser.add_argument('--test-size' , type=float, default=0.2,help='test split ratio(default:0.2)')
 parser.add_argument('--step-size', default=10, type=int, metavar='SZ',
                     help='Decay learning rate schedules every --step-size (default: 50)')
-parser.add_argument('--unfreeze', type=int,  default='',
+parser.add_argument('--unfreeze', type=str,  default='',
                     help='Provide an option for unfreezeing given layers')
-parser.add_argument('--freeze', type=int, default='',
+parser.add_argument('--freeze', type=str, default='',
                     help='Provide an option for freezeing given layers')
 parser.add_argument('--pretrain_checkpoint',default='casia-webface' ,type=str,help='Pretrained checkpoints casia-webface or vggface2')
 parser.add_argument('--fc-only',default= False, action='store_true',help='Train fc only')
