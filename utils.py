@@ -11,6 +11,11 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 from matplotlib.ticker import MaxNLocator
 import cv2
+import time
+from model import FaceNetModel
+from loss import TripletLoss
+from torch.nn.modules.distance import PairwiseDistance
+from eval_metrics import evaluate
 
 
 def train_epoch(
@@ -304,3 +309,61 @@ class VisdomLinePlotter(object):
         else:
             self.viz.line(X=np.array([x]), Y=np.array([y]), env=self.env, win=self.plots[var_name],
                           name=split_name, update='append')
+
+
+
+def eval_facenet_model(model,dataloader,phase,margin,data_size):
+
+    model.eval()
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    labels, distances = [], []
+    triplet_loss_sum = 0.0
+    model = FaceNetModel()
+    model.to(device)
+
+
+    trip_loss = TripletLoss(margin).to(device)
+    l2_dist = PairwiseDistance(2)
+
+    for _, batch_sample in enumerate(dataloader[phase]):
+
+        anc_img = batch_sample['anc_img'].to(device)
+        pos_img = batch_sample['pos_img'].to(device)
+        neg_img = batch_sample['neg_img'].to(device)
+
+
+        with torch.no_grad():
+
+            # anc_embed, pos_embed and neg_embed are encoding(embedding) of image
+            anc_embed, pos_embed, neg_embed = model(anc_img), model(pos_img), model(neg_img)
+
+            # choose the semi hard negatives only for "training"
+            pos_dist = l2_dist.forward(anc_embed, pos_embed)
+            neg_dist = l2_dist.forward(anc_embed, neg_embed)
+
+            all = (neg_dist - pos_dist < margin).cpu().numpy().flatten()
+            hard_triplets = np.where(all >= 0)
+
+            anc_hard_embed = anc_embed[hard_triplets]
+            pos_hard_embed = pos_embed[hard_triplets]
+            neg_hard_embed = neg_embed[hard_triplets]
+
+            triplet_loss = trip_loss.forward(anc_hard_embed, pos_hard_embed, neg_hard_embed)
+
+            distances.append(pos_dist.data.cpu().numpy())
+            labels.append(np.ones(pos_dist.size(0)))
+
+            distances.append(neg_dist.data.cpu().numpy())
+            labels.append(np.zeros(neg_dist.size(0)))
+
+            triplet_loss_sum += triplet_loss.item()
+
+    avg_triplet_loss = triplet_loss_sum / data_size[phase]
+    labels = np.array([sublabel for label in labels for sublabel in label])
+    distances = np.array([subdist for dist in distances for subdist in dist])
+
+    tpr, fpr, accuracy, val, val_std, far = evaluate(distances, labels)
+    print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_triplet_loss))
+    print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
+

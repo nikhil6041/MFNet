@@ -13,7 +13,7 @@ from dataset import get_dataloader
 from eval_metrics import evaluate, plot_roc
 from loss import TripletLoss
 from model import FaceNetModel
-from utils import ModelSaver, init_log_just_created,write_csv
+from utils import ModelSaver, init_log_just_created,write_csv,eval_facenet_model
 from pprint import pprint as ppt
 
 parser = argparse.ArgumentParser(description='Face Recognition using Triplet Loss')
@@ -147,6 +147,8 @@ def main():
         train_valid(model, optimizer, triplet_loss, scheduler, epoch, data_loaders, data_size,save_dir)
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
+    eval_facenet_model(model,data_loaders,phase='test',margin=args.margin,data_size=data_size)
+    
 
 
 def save_last_checkpoint(state,dir,ckptname):
