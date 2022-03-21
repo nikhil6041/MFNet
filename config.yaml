@@ -1,0 +1,39 @@
+triplet_model:
+  dataset:
+    num_triplets: 8000
+    batch_size: 64
+    num_workers: 8
+    root_dir: None
+    save_dir: None
+    val_size: 0.2
+    test_size: 0.2
+  model:
+    freeze_base: True
+    pretrain_checkpoint: 'casia-webface'
+    last_ckpt_name: ''
+    best_ckpt_name: ''
+  training_params:
+    num_epochs: 200
+    learning_rate: 0.001
+    margin: 0.05
+quadtriplet_model:
+  dataset:
+    num_triplets: 8000
+    batch_size: 64
+    num_workers: 8
+    root_dir: None
+    save_dir: None
+    val_size: 0.2
+    test_size: 0.2
+  model:
+    freeze_base: True
+    pretrain_checkpoint: 'casia-webface'
+    last_ckpt_name: ''
+    best_ckpt_name: ''
+  training_params:
+    num_epochs: 200
+    learning_rate: 0.001
+    alpha1 : 0.05
+    alpha2 : 0.05
+    alpha3 : 0.05
+    alpha4 : 0.05
