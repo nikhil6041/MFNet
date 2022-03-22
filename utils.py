@@ -319,8 +319,8 @@ def eval_facenet_model(model,dataloader,phase,margin,data_size):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     labels, distances = [], []
     triplet_loss_sum = 0.0
-    model = FaceNetModel()
-    model.to(device)
+    # model = FaceNetModel()
+    # model.to(device)
 
 
     trip_loss = TripletLoss(margin).to(device)
