@@ -120,7 +120,7 @@ def train_valid( model, optimizer, trip_loss, margin, scheduler, epoch, dataload
 
         if phase == 'val':
             save_last_checkpoint({'epoch': epoch,
-                                  'state_dict': model.module.state_dict(),
+                                  'state_dict': model.state_dict(),
                                   'optimizer_state': optimizer.state_dict(),
                                   'accuracy': np.mean(accuracy),
                                   'loss': avg_triplet_loss
@@ -128,7 +128,7 @@ def train_valid( model, optimizer, trip_loss, margin, scheduler, epoch, dataload
                                   save_dir,
                                   last_ckpt_name)
             save_if_best({'epoch': epoch,
-                          'state_dict': model.module.state_dict(),
+                          'state_dict': model.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
                           'accuracy': np.mean(accuracy),
                           'loss': avg_triplet_loss
