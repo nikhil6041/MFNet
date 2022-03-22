@@ -137,10 +137,10 @@ def train_valid( model, optimizer, trip_loss, margin, scheduler, epoch, dataload
                           save_dir,
                           best_ckpt_name)
         else:
-            plot_roc(fpr, tpr, figure_name='./log/roc_valid_epoch_{}.png'.format(epoch))
+            plot_roc(fpr, tpr, figure_name='./log/roc_valid_epoch_{}.png'.format(epoch))    
 
+if __name__ == '__main__':
 
-def main():
 
     config_file_path = "config.yaml"
     try:
@@ -155,7 +155,7 @@ def main():
     parser.add_argument('--variant',type=str,help="Name of variant a) triplet b) quad triplet")
     args = parser.parse_args()
 
-    variant = args['variant']
+    variant = args.variant
     config = config[variant]
     
     tr_params = config['training_params']
@@ -170,9 +170,9 @@ def main():
     pretrain_checkpoint = model_params['pretrain_checkpoint']
     last_ckpt_name = model_params['last_ckpt_name']
     best_ckpt_name = model_params['best_ckpt_name']
-    fc_only = config['fc_only']
-    except_fc = config['except_fc']
-    train_all = config['train_all']
+    fc_only = model_params['fc_only']
+    except_fc = model_params['except_fc']
+    train_all = model_params['train_all']
 
     num_triplets = ds_params['num_triplets']
     batch_size = ds_params['batch_size']
@@ -199,7 +199,7 @@ def main():
     print(f"Learning rate will decayed every {step_size}th epoch")
     print("Save dir",save_dir)
     print("Last checkpoint name",last_ckpt_name)
-    print("Best checkpoint name",args.best_ckpt_name)
+    print("Best checkpoint name",best_ckpt_name)
     model = FaceNetModel(pretrained=pretrain_checkpoint)
     model.to(device)
 
@@ -230,7 +230,4 @@ def main():
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
     eval_facenet_model(model,data_loaders,phase='test',margin=margin,data_size=data_size)
-    
 
-if __name__ == '__main__':
-    main()
