@@ -1,6 +1,6 @@
 from torchvision import datasets,transforms 
 from facenet_pytorch import MTCNN, training
-
+import torch
 
 def create_facial_cropped_dataset(data_dir,mtcnn,workers,batch_size):
 
@@ -10,7 +10,7 @@ def create_facial_cropped_dataset(data_dir,mtcnn,workers,batch_size):
             for p, _ in dataset.samples
     ]
             
-    loader = DataLoader(
+    loader = torch.utils.data.DataLoader(
         dataset,
         num_workers=workers,
         batch_size=batch_size,
@@ -24,4 +24,4 @@ def create_facial_cropped_dataset(data_dir,mtcnn,workers,batch_size):
     # Remove mtcnn to reduce GPU memory usage
     del mtcnn
 
-create_facial_cropped_dataset(data_dir,mtcnn)
+# create_facial_cropped_dataset(data_dir,mtcnn)

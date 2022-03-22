@@ -24,20 +24,13 @@ class TripletFaceDataset(Dataset):
             '''
               - face_classes = {'class0': [class0_id0, ...], 'class1': [class1_id0, ...], ...}
             '''
-            # d = dict()
+
             face_classes = dict()
 
             for label in os.listdir(root_dir):
                 if label not in face_classes.keys():
                     vals = list(os.listdir(os.path.join(root_dir,label)))
                     face_classes[label] = vals
-                    # for val in vals:
-                    #     if val not in d.keys():
-                    #         d[val] = label
-            # df = pd.DataFrame({
-            #     'name':list(d.keys()),
-            #     'class':list(d.values())
-            # })
 
             return face_classes
 
@@ -109,32 +102,15 @@ class TripletFaceDataset(Dataset):
     def __len__(self):
         return len(self.training_triplets)
 
-
-def get_dataloader(root_dir,val_size,
+def get_dataloader_triplets(root_dir,val_size,
                    test_size,num_triplets,
                    batch_size, num_workers):
-    # data_transforms = {
-    #     'train': transforms.Compose([
-    #         transforms.ToPILImage(),
-    #         transforms.RandomRotation(15),
-    #         transforms.RandomResizedCrop(224),
-    #         transforms.RandomHorizontalFlip(),
-    #         transforms.ToTensor(),
-    #         transforms.Normalize(mean=[0.485, 0.456, 0.406],
-    #                              std=[0.229, 0.224, 0.225])]),
-    #     'valid': transforms.Compose([
-    #         transforms.ToPILImage(),
-    #         transforms.Resize(224),
-    #         transforms.CenterCrop(224),
-    #         transforms.ToTensor(),
-    #         transforms.Normalize(mean=[0.485, 0.456, 0.406],
-    #                              std=[0.229, 0.224, 0.225])])
-    # }
+
     data_transforms = transforms.Compose([
             # transforms.ToPILImage(),
-            transforms.RandomRotation(15),
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
+            # transforms.RandomRotation(15),
+            # transforms.RandomResizedCrop(224),
+            # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])])
