@@ -1,6 +1,6 @@
 triplet_model:
   dataset:
-    num_triplets: 8000
+    num_triplets: 2000
     batch_size: 64
     num_workers: 8
     root_dir: '/content/drive/MyDrive/Labelled Faces In The Wild Dataset/lfw-deepfunneled/lfw-deepfunneled_cropped'
@@ -15,13 +15,13 @@ triplet_model:
     except_fc: True
     train_all: True
   training_params:
-    num_epochs: 200
+    num_epochs: 10
     step_size: 50
     learning_rate: 0.001
     margin: 0.05
 quadtriplet_model:
   dataset:
-    num_triplets: 8000
+    num_triplets: 2000
     batch_size: 64
     num_workers: 8
     root_dir: '/content/drive/MyDrive/Labelled Faces In The Wild Dataset/lfw-deepfunneled/lfw-deepfunneled_cropped'
@@ -36,7 +36,7 @@ quadtriplet_model:
     except_fc: True
     train_all: True
   training_params:
-    num_epochs: 200
+    num_epochs: 10
     step_size: 50
     learning_rate: 0.001
     alpha1 : 0.05
