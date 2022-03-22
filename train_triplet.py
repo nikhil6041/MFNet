@@ -9,7 +9,7 @@ import torch.optim as optim
 from torch.nn.modules.distance import PairwiseDistance
 from torch.optim import lr_scheduler
 
-from dataset import get_dataloader
+from dataset import get_dataloader_triplets
 from eval_metrics import evaluate, plot_roc
 from loss import TripletLoss
 from model import FaceNetModel
