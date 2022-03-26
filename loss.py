@@ -34,22 +34,22 @@ class QuadTripletLoss(torch.nn.Module):
 
     def forward(self, anchor, positive, negative, anchor_masked, positive_masked, negative_masked):
         
-        pos_dist_u_u = self.pdist.forward(anchor, positive)     # distance b/w anchor image and positive image
-        neg_dist_u_u = self.pdist.forward(anchor, negative)     # distance b/w anchor image and negaive image
+        pos_dist_u_u = self.l1.pdist.forward(anchor, positive)     # distance b/w anchor image and positive image
+        neg_dist_u_u = self.l1.pdist.forward(anchor, negative)     # distance b/w anchor image and negaive image
 
-        hinge_dist_u_u = torch.clamp(self.alpha + pos_dist_u_u - neg_dist_u_u, min=0.0)
+        hinge_dist_u_u = torch.clamp(self.alpha1 + pos_dist_u_u - neg_dist_u_u, min=0.0)
         
-        pos_dist_u_m = self.pdist.forward(anchor, positive_masked)  # distance b/w anchor image and positive masked image
-        neg_dist_u_m = self.pdist.forward(anchor, negative_masked)  # distance b/w anchor image and negative masked image
-        hinge_dist_u_m = torch.clamp(self.margin + pos_dist_u_m - neg_dist_u_m, min=0.0)
+        pos_dist_u_m = self.l2.pdist.forward(anchor, positive_masked)  # distance b/w anchor image and positive masked image
+        neg_dist_u_m = self.l2.pdist.forward(anchor, negative_masked)  # distance b/w anchor image and negative masked image
+        hinge_dist_u_m = torch.clamp(self.alpha2 + pos_dist_u_m - neg_dist_u_m, min=0.0)
         
-        pos_dist_m_u = self.pdist.forward(anchor_masked, positive)  # distance b/w anchor masked image and positive image
-        neg_dist_m_u = self.pdist.forward(anchor_masked, negative)  # distance b/w anchor masked image and negative image
-        hinge_dist_m_u = torch.clamp(self.margin + pos_dist_m_u - neg_dist_m_u, min=0.0)
+        pos_dist_m_u = self.l3.pdist.forward(anchor_masked, positive)  # distance b/w anchor masked image and positive image
+        neg_dist_m_u = self.l3.pdist.forward(anchor_masked, negative)  # distance b/w anchor masked image and negative image
+        hinge_dist_m_u = torch.clamp(self.alpha3 + pos_dist_m_u - neg_dist_m_u, min=0.0)
         
-        pos_dist_m_m = self.pdist.forward(anchor_masked, positive_masked)   # distance b/w anchor masked image and positive  masked image
-        neg_dist_m_m = self.pdist.forward(anchor_masked, negative_masked)   # distance b/w anchor masked image and negative  masked image
-        hinge_dist_m_m = torch.clamp(self.margin + pos_dist_m_m - neg_dist_m_m, min=0.0)
+        pos_dist_m_m = self.l4.pdist.forward(anchor_masked, positive_masked)   # distance b/w anchor masked image and positive  masked image
+        neg_dist_m_m = self.l4.pdist.forward(anchor_masked, negative_masked)   # distance b/w anchor masked image and negative  masked image
+        hinge_dist_m_m = torch.clamp(self.alpha4 + pos_dist_m_m - neg_dist_m_m, min=0.0)
 
         loss_u_u = torch.mean(hinge_dist_u_u)   
         loss_u_m = torch.mean(hinge_dist_u_m)

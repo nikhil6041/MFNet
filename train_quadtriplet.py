@@ -145,7 +145,7 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lr = '_'.join(map(str, scheduler.get_last_lr()))
 
-        write_csv(f'{logs_dir/phase}.csv', [time, epoch, np.mean(accuracy), avg_qtriplet_loss, batch_size, lr])
+        write_csv(f'{logs_dir}/{phase}.csv', [time, epoch, np.mean(accuracy), avg_qtriplet_loss, batch_size, lr])
 
         if phase == 'val':
             save_last_checkpoint({'epoch': epoch,

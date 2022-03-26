@@ -163,29 +163,37 @@ class QuadTripletFaceDataset(Dataset):
         self.root_dir_masked = root_dir_masked
         self.num_triplets = num_triplets
         self.transform = transform
-        self.training_triplets_original = self.generate_triplets(self.root_dir_original, self.num_triplets)
-        self.training_triplets_masked = self.generate_triplets(self.root_dir_masked, self.num_triplets)
+        self.face_classes_masked = self.make_dictionary_for_face_class(self.root_dir_masked,"masked")
+        self.face_classes_original = self.make_dictionary_for_face_class(self.root_dir_original,"original")
+        self.training_triplets_masked = self.generate_triplets(self.root_dir_masked, self.num_triplets,"masked")
+        self.training_triplets_original = self.generate_triplets(self.root_dir_original, self.num_triplets,"original")
 
-    @staticmethod
-    def generate_triplets(root_dir, num_triplets):
+    def make_dictionary_for_face_class(self,root_dir,type_of_image):
 
-        def make_dictionary_for_face_class(root_dir):
+        '''
+            - face_classes = {'class0': [class0_id0, ...], 'class1': [class1_id0, ...], ...}
+        '''
 
-            '''
-              - face_classes = {'class0': [class0_id0, ...], 'class1': [class1_id0, ...], ...}
-            '''
+        face_classes = dict()
 
-            face_classes = dict()
+        for label in os.listdir(root_dir):
+            if label not in face_classes.keys() and  type_of_image == "masked":
+                vals = list(os.listdir(os.path.join(root_dir,label)))
+                face_classes[label] = vals
+            elif type_of_image == "original" and label in self.face_classes_masked:
+                vals = list(os.listdir(os.path.join(root_dir,label)))
+                face_classes[label] = vals
+        return face_classes
 
-            for label in os.listdir(root_dir):
-                if label not in face_classes.keys():
-                    vals = list(os.listdir(os.path.join(root_dir,label)))
-                    face_classes[label] = vals
 
-            return face_classes
+    def generate_triplets(self, num_triplets,type_of_image):
+
 
         triplets = []
-        face_classes = make_dictionary_for_face_class(root_dir)
+        if type_of_image == "original":
+            face_classes = self.face_classes_original
+        elif type_of_image == "masked":
+            face_classes = self.face_classes_masked
         classes = list(face_classes.keys())
 
         for _ in range(num_triplets):
