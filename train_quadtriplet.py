@@ -47,7 +47,7 @@ def get_triplets(anc_embed,pos_embed,neg_embed,margin,phase):
 
     return anc_hard_embed,pos_hard_embed,neg_hard_embed,pos_dist,neg_dist
 
-def train_valid_quadtriplet( model, optimizer, qtrip_loss,  scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
+def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
     
     for phase in ['train', 'val']:
 
@@ -75,22 +75,22 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss,  scheduler, epoch, da
                 anc_embed_m, pos_embed_m, neg_embed_m  = model(anc_img_mask), model(pos_img_mask), model(neg_img_mask)
 
                 if phase == "train":
-                    embs_u = get_triplets(anc_embed_u,pos_embed_u,neg_embed_u)
+                    embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     if embs_u is not None:
                         anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
                     else:
                         continue
-                    embs_m = get_triplets(anc_embed_m,pos_embed_m,neg_embed_m)
+                    embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase)
                     if embs_m is not None:
                         anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
                     else:
                         continue
                 else:
                     
-                    embs_u = get_triplets(anc_embed_u,pos_embed_u,neg_embed_u)
+                    embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
                     
-                    embs_m = get_triplets(anc_embed_m,pos_embed_m,neg_embed_m)
+                    embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase )
                     anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
  
                 # anc_hard_img = anc_img[hard_triplets]
@@ -261,7 +261,7 @@ if __name__ == '__main__':
                                                  num_triplets,
                                                  batch_size, num_workers)
 
-        train_valid_quadtriplet( model, optimizer, qtriplet_loss, scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
+        train_valid_quadtriplet( model, optimizer, qtriplet_loss, alpha1 , alpha4, scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
     eval_facenet_model(model,data_loaders,phase='test',margin= (alpha1 + alpha2 + alpha3 + alpha4 )/4 ,data_size=data_size)
