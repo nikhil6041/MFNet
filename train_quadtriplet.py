@@ -214,7 +214,8 @@ if __name__ == '__main__':
     val_size = ds_params['val_size']
     test_size = ds_params['test_size']
     
-
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
     init_log_just_created(f"{logs_dir}/val.csv")
     init_log_just_created(f"{logs_dir}/train.csv")
     
