@@ -154,3 +154,56 @@ def get_dataloader_triplets(root_dir,val_size,
     data_size = {x: len(face_dataset_indices[x]) for x in ['train', 'val','test']}
 
     return dataloaders, data_size
+
+def get_dataloader_quadtriplets(root_dir_original,root_dir_masked,
+                    val_size,test_size,num_triplets,
+                   batch_size, num_workers):
+
+    data_transforms = transforms.Compose([
+            # transforms.ToPILImage(),
+            # transforms.RandomRotation(15),
+            # transforms.RandomResizedCrop(224),
+            # transforms.RandomHorizontalFlip(),
+            transforms.Resize(128),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])])
+
+    face_dataset_original = TripletFaceDataset(
+        root_dir=root_dir_original,
+        num_triplets=num_triplets,
+        transform=data_transforms
+    )
+
+    dataset_size_original = len(face_dataset_original)
+    indices = list(range(0,dataset_size_original))
+
+    split = int(np.floor(test_size*dataset_size_original))
+
+    np.random.shuffle(indices)
+
+    tv_indices , test_indices = indices[split:] , indices[:split]
+
+    v_split = int(np.floor(len(tv_indices)*val_size))
+
+    train_indices , val_indices = tv_indices[v_split:] , tv_indices[:v_split]
+
+    face_dataset_indices = {
+        'train':train_indices,
+        'val':val_indices,
+        'test':test_indices
+    }
+
+    face_dataset_sampler = {
+        'train': SubsetRandomSampler(train_indices), 
+        'val': SubsetRandomSampler(val_indices),
+        'test': SubsetRandomSampler(test_indices) 
+    }
+
+    dataloaders = {
+        x: torch.utils.data.DataLoader(full_dataset, batch_size=batch_size, sampler = full_dataset_sampler[x] , num_workers=num_workers,drop_last = True)
+        for x in ['train', 'val','test']}
+
+    data_size = {x: len(face_dataset_indices[x]) for x in ['train', 'val','test']}
+
+    return dataloaders, data_size

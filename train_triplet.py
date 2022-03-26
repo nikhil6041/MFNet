@@ -30,7 +30,7 @@ def save_last_checkpoint(state,dir,ckptname):
     torch.save(state, os.path.join(dir,ckptname))
 
 
-def train_valid( model, optimizer, trip_loss, margin, scheduler, epoch, dataloaders , batch_size , data_size , save_dir , last_ckpt_name , best_ckpt_name ):
+def train_valid_triplet( model, optimizer, trip_loss, margin, scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
     
     for phase in ['train', 'val']:
 
@@ -116,7 +116,7 @@ def train_valid( model, optimizer, trip_loss, margin, scheduler, epoch, dataload
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lr = '_'.join(map(str, scheduler.get_last_lr()))
 
-        write_csv(f'log/{phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, batch_size, lr])
+        write_csv(f'{logs_dir/phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, batch_size, lr])
 
         if phase == 'val':
             save_last_checkpoint({'epoch': epoch,
@@ -137,7 +137,7 @@ def train_valid( model, optimizer, trip_loss, margin, scheduler, epoch, dataload
                           save_dir,
                           best_ckpt_name)
         else:
-            plot_roc(fpr, tpr, figure_name='./log/roc_valid_epoch_{}.png'.format(epoch))    
+            plot_roc(fpr, tpr, figure_name='./{}/roc_valid_epoch_{}.png'.format(logs_dir,epoch))    
 
 if __name__ == '__main__':
 
@@ -153,9 +153,9 @@ if __name__ == '__main__':
         exit()
     parser = argparse.ArgumentParser(description='Masked Face Recognition')
     parser.add_argument('--variant',type=str,help="Name of variant a) triplet b) quad triplet")
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-    variant = args.variant
+    variant = args['variant']
     config = config[variant]
     
     tr_params = config['training_params']
@@ -166,6 +166,7 @@ if __name__ == '__main__':
     learning_rate = tr_params['learning_rate']
     margin = tr_params['margin']
     step_size = tr_params['step_size']
+    logs_dir = tr_params['logs_dir']
 
     pretrain_checkpoint = model_params['pretrain_checkpoint']
     last_ckpt_name = model_params['last_ckpt_name']
@@ -183,10 +184,10 @@ if __name__ == '__main__':
     test_size = ds_params['test_size']
     
 
-    init_log_just_created("log/val.csv")
-    init_log_just_created("log/train.csv")
+    init_log_just_created(f"{logs_dir}/val.csv")
+    init_log_just_created(f"{logs_dir}/train.csv")
     
-    valid = pd.read_csv('log/val.csv')
+    valid = pd.read_csv(f"{logs_dir}/val.csv")
     max_acc = valid['acc'].max()
 
 
@@ -226,7 +227,7 @@ if __name__ == '__main__':
                                                  num_triplets,
                                                  batch_size, num_workers)
 
-        train_valid( model, optimizer, triplet_loss, margin, scheduler, epoch, data_loaders , batch_size , data_size , save_dir , last_ckpt_name , best_ckpt_name )
+        train_valid_triplet( model, optimizer, triplet_loss, margin, scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
     eval_facenet_model(model,data_loaders,phase='test',margin=margin,data_size=data_size)
