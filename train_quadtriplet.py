@@ -61,18 +61,18 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss,  scheduler, epoch, da
 
         for _, batch_sample in enumerate(dataloaders[phase]):
 
-            anc_img_u = batch_sample['anc_img_u'].to(device)
-            pos_img_u = batch_sample['pos_img_u'].to(device)
-            neg_img_u = batch_sample['neg_img_u'].to(device)
-            anc_img_m = batch_sample['anc_img_m'].to(device)
-            pos_img_m = batch_sample['pos_img_m'].to(device)
-            neg_img_m = batch_sample['neg_img_m'].to(device)
+            anc_img_orig = batch_sample['anc_img_orig'].to(device)
+            pos_img_orig = batch_sample['pos_img_orig'].to(device)
+            neg_img_orig = batch_sample['neg_img_orig'].to(device)
+            anc_img_mask = batch_sample['anc_img_mask'].to(device)
+            pos_img_mask = batch_sample['pos_img_mask'].to(device)
+            neg_img_mask = batch_sample['neg_img_mask'].to(device)
        
             with torch.set_grad_enabled(phase == 'train'):
 
                 # anc_embed, pos_embed and neg_embed are encoding(embedding) of image
-                anc_embed_u, pos_embed_u, neg_embed_u , pos_dist_u , neg_dist_u = model(anc_img_u), model(pos_img_u), model(neg_img_u)
-                anc_embed_m, pos_embed_m, neg_embed_m , pos_dist_m , neg_dist_m = model(anc_img_m), model(pos_img_m), model(neg_img_m)
+                anc_embed_u, pos_embed_u, neg_embed_u , pos_dist_u , neg_dist_u = model(anc_img_orig), model(pos_img_orig), model(neg_img_orig)
+                anc_embed_m, pos_embed_m, neg_embed_m , pos_dist_m , neg_dist_m = model(anc_img_mask), model(pos_img_mask), model(neg_img_mask)
 
                 if phase == "train":
                     embs_u = get_triplets(anc_embed_u,pos_embed_u,neg_embed_u)
