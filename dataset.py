@@ -266,7 +266,7 @@ class QuadTripletFaceDataset(Dataset):
         return sample
 
     def __len__(self):
-        return len(self.training_triplets)
+        return min( len(self.training_triplets_original) , len(self.training_triplets_masked))
 
 def get_dataloader_quadtriplets(root_dir_original,root_dir_masked,
                     val_size,test_size,num_triplets,
