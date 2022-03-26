@@ -255,7 +255,7 @@ if __name__ == '__main__':
         print('Epoch [{}/{}]'.format(epoch, num_epochs + start_epoch - 1))
 
         time0 = time.time()
-        data_loaders, data_size = get_dataloader_quadtriplets(root_dir_original, val_size,test_size,
+        data_loaders, data_size = get_dataloader_quadtriplets(root_dir_original, root_dir_masked,val_size,test_size,
                                                  num_triplets,
                                                  batch_size, num_workers)
 
