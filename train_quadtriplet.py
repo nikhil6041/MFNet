@@ -71,25 +71,27 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss,  scheduler, epoch, da
             with torch.set_grad_enabled(phase == 'train'):
 
                 # anc_embed, pos_embed and neg_embed are encoding(embedding) of image
-                anc_embed_u, pos_embed_u, neg_embed_u , pos_dist_u , neg_dist_u = model(anc_img_orig), model(pos_img_orig), model(neg_img_orig)
-                anc_embed_m, pos_embed_m, neg_embed_m , pos_dist_m , neg_dist_m = model(anc_img_mask), model(pos_img_mask), model(neg_img_mask)
+                anc_embed_u, pos_embed_u, neg_embed_u  = model(anc_img_orig), model(pos_img_orig), model(neg_img_orig)
+                anc_embed_m, pos_embed_m, neg_embed_m  = model(anc_img_mask), model(pos_img_mask), model(neg_img_mask)
 
                 if phase == "train":
                     embs_u = get_triplets(anc_embed_u,pos_embed_u,neg_embed_u)
                     if embs_u is not None:
-                        anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u = embs_u
+                        anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
                     else:
                         continue
                     embs_m = get_triplets(anc_embed_m,pos_embed_m,neg_embed_m)
                     if embs_m is not None:
-                        anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m = embs_m
+                        anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
                     else:
                         continue
                 else:
+                    
                     embs_u = get_triplets(anc_embed_u,pos_embed_u,neg_embed_u)
-                    anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u = embs_u
+                    anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
+                    
                     embs_m = get_triplets(anc_embed_m,pos_embed_m,neg_embed_m)
-                    anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m = embs_m
+                    anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
  
                 # anc_hard_img = anc_img[hard_triplets]
                 # pos_hard_img = pos_img[hard_triplets]
