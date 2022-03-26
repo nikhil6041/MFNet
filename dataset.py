@@ -165,8 +165,8 @@ class QuadTripletFaceDataset(Dataset):
         self.transform = transform
         self.face_classes_masked = self.make_dictionary_for_face_class(self.root_dir_masked,"masked")
         self.face_classes_original = self.make_dictionary_for_face_class(self.root_dir_original,"original")
-        self.training_triplets_masked = self.generate_triplets(self.root_dir_masked, self.num_triplets,"masked")
-        self.training_triplets_original = self.generate_triplets(self.root_dir_original, self.num_triplets,"original")
+        self.training_triplets_masked = self.generate_triplets( self.num_triplets,"masked")
+        self.training_triplets_original = self.generate_triplets( self.num_triplets,"original")
 
     def make_dictionary_for_face_class(self,root_dir,type_of_image):
 
