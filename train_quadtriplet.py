@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch.nn.modules.distance import PairwiseDistance
 from torch.optim import lr_scheduler
 
-from dataset import get_dataloader_triplets
+from dataset import get_dataloader_quadtriplets
 from eval_metrics import evaluate, plot_roc
 from loss import QuadTripletLoss
 from model import FaceNetModel
@@ -47,7 +47,7 @@ def get_triplets(anc_embed,pos_embed,neg_embed,margin,phase):
 
     return anc_hard_embed,pos_hard_embed,neg_hard_embed,pos_dist,neg_dist
 
-def train_valid_quadtriplet( model, optimizer, qtrip_loss, a1,a2,a3,a4, scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
+def train_valid_quadtriplet( model, optimizer, qtrip_loss,  scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
     
     for phase in ['train', 'val']:
 
@@ -100,7 +100,7 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, a1,a2,a3,a4, schedule
                 # model.module.forward_classifier(pos_hard_img)
                 # model.module.forward_classifier(neg_hard_img)
 
-                qtriplet_loss = qtrip_loss.forward(anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u,anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m)
+                qtriplet_loss = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
 
                 if phase == 'train':
                     optimizer.zero_grad()
@@ -108,16 +108,16 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, a1,a2,a3,a4, schedule
                     optimizer.step()
 
                 distances.append(pos_dist_u.data.cpu().numpy())
-                labels.append(np.full(pos_dist_u.size(0),1))
+                labels.append(np.full(pos_dist_u.size(0), 1 ))
 
                 distances.append(neg_dist_u.data.cpu().numpy())
-                labels.append(np.full(neg_dist_u.size(0) ,-1))
+                labels.append(np.full(neg_dist_u.size(0) , -1 ))
 
                 distances.append(pos_dist_m.data.cpu().numpy())
-                labels.append(np.full(pos_dist_m.size(0) , 2))
+                labels.append(np.full(pos_dist_m.size(0) , 2 ))
 
                 distances.append(neg_dist_m.data.cpu().numpy())
-                labels.append(np.full(neg_dist_m.size(0) , -2))
+                labels.append(np.full(neg_dist_m.size(0) , -2 ))
 
                 qtriplet_loss_sum += qtriplet_loss.item()
 
@@ -208,7 +208,8 @@ if __name__ == '__main__':
     num_triplets = ds_params['num_triplets']
     batch_size = ds_params['batch_size']
     num_workers = ds_params['num_workers']
-    root_dir = ds_params['root_dir']
+    root_dir_original = ds_params['root_dir_original']
+    root_dir_masked = ds_params['root_dir_masked']
     save_dir = ds_params['save_dir']
     val_size = ds_params['val_size']
     test_size = ds_params['test_size']
@@ -235,7 +236,7 @@ if __name__ == '__main__':
     model.to(device)
 
 
-    triplet_loss = QuadTripletLoss(alpha1,alpha2,alpha3,alpha4).to(device)
+    qtriplet_loss = QuadTripletLoss(alpha1,alpha2,alpha3,alpha4).to(device)
 
     if fc_only:
         model.unfreeze_only(['fc', 'classifier'])
@@ -253,12 +254,12 @@ if __name__ == '__main__':
         print('Epoch [{}/{}]'.format(epoch, num_epochs + start_epoch - 1))
 
         time0 = time.time()
-        data_loaders, data_size = get_dataloader_triplets(root_dir, val_size,test_size,
+        data_loaders, data_size = get_dataloader_quadtriplets(root_dir_original, val_size,test_size,
                                                  num_triplets,
                                                  batch_size, num_workers)
 
-        train_valid_quadtriplet( model, optimizer, triplet_loss, margin, scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
+        train_valid_quadtriplet( model, optimizer, qtriplet_loss, scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
-    eval_facenet_model(model,data_loaders,phase='test',margin=margin,data_size=data_size)
+    eval_facenet_model(model,data_loaders,phase='test',margin= (alpha1 + alpha2 + alpha3 + alpha4 )/4 ,data_size=data_size)
 
