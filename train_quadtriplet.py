@@ -78,21 +78,25 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                     embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     if embs_u is not None:
                         anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
+                        print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
                     else:
                         continue
                     embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase)
                     if embs_m is not None:
                         anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
+                        print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
+
                     else:
                         continue
                 else:
                     
                     embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
-                    
+                    print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
+         
                     embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase )
                     anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
- 
+                    print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
                 # anc_hard_img = anc_img[hard_triplets]
                 # pos_hard_img = pos_img[hard_triplets]
                 # neg_hard_img = neg_img[hard_triplets]
