@@ -116,11 +116,11 @@ def train_valid_triplet( model, optimizer, trip_loss, margin, scheduler, epoch, 
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lr = '_'.join(map(str, scheduler.get_last_lr()))
 
-        write_csv(f'{logs_dir/phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, batch_size, lr])
+        write_csv(f'{logs_dir}/{phase}.csv', [time, epoch, np.mean(accuracy), avg_triplet_loss, batch_size, lr])
 
         if phase == 'val':
             save_last_checkpoint({'epoch': epoch,
-                                  'state_dict': model.module.state_dict(),
+                                  'state_dict': model.state_dict(),
                                   'optimizer_state': optimizer.state_dict(),
                                   'accuracy': np.mean(accuracy),
                                   'loss': avg_triplet_loss
@@ -128,7 +128,7 @@ def train_valid_triplet( model, optimizer, trip_loss, margin, scheduler, epoch, 
                                   save_dir,
                                   last_ckpt_name)
             save_if_best({'epoch': epoch,
-                          'state_dict': model.module.state_dict(),
+                          'state_dict': model.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
                           'accuracy': np.mean(accuracy),
                           'loss': avg_triplet_loss
