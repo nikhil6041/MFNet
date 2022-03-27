@@ -112,6 +112,43 @@ class TripletFaceDataset(Dataset):
     def __len__(self):
         return len(self.training_triplets)
 
+class FaceDataset(Dataset):
+
+    def __init__(self, root_dir, transform=None):
+
+        self.root_dir = root_dir
+        self.transform = transform
+        self.images = [ img  for subdir in os.listdir(self.root_dir) for img in os.listdir(subdir)]
+
+    def __getitem__(self, idx):
+        img_path = self.images[idx]
+        img = Image.open(img_path).convert('RGB')
+        if self.transform:
+            img = self.transform(img)
+        return img
+
+    def __len__(self):
+        return len(self.images)
+
+def get_face_dataloader(root_dir,batch_size, num_workers):
+
+    data_transforms = transforms.Compose([
+            transforms.Resize(128),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])])
+
+    face_dataset = FaceDataset(
+        root_dir=root_dir,
+        transform=data_transforms
+    )
+
+    dataset_size = len(face_dataset)
+    indices = list(range(0,dataset_size))
+    dataset_sampler =  SubsetRandomSampler(indices)
+    dataloader = torch.utils.data.DataLoader(face_dataset, batch_size=batch_size, sampler = dataset_sampler , num_workers=num_workers,drop_last = True)
+    return dataloader
+
 def get_dataloader_triplets(root_dir,val_size,
                    test_size,num_triplets,
                    batch_size, num_workers):
