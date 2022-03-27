@@ -118,14 +118,26 @@ class FaceDataset(Dataset):
 
         self.root_dir = root_dir
         self.transform = transform
-        self.images = [ img  for subdir in os.listdir(self.root_dir) for img in os.listdir(subdir)]
+        images = []
+        labels = []
+        for idx,subdir in enumerate(os.listdir(self.root_dir)):
+            subdir_path = os.path.join(self.root_dir,subdir)
+            for img in os.listdir(subdir_path):
+                if len(os.listdir(subdir_path)) >= 10:
+                    img_path = os.path.join(subdir_path,img)
+                    images.append(img_path)
+                    labels.append(idx+1)
+
+        self.images = images
+        self.labels = labels
 
     def __getitem__(self, idx):
         img_path = self.images[idx]
+        label = self.labels[idx]
         img = Image.open(img_path).convert('RGB')
         if self.transform:
             img = self.transform(img)
-        return img
+        return img,label
 
     def __len__(self):
         return len(self.images)
