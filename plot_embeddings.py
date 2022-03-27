@@ -35,9 +35,9 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    model = FaceNetModel().to(device)
-        
-    model.load_state_dict(ckpt_path['state_dict'])
+    model = FaceNetModel('casia-webface').to(device)
+    state_dict = torch.load(ckpt_path)['state_dict']
+    model.load_state_dict(state_dict)
 
     embeddings = []
     
