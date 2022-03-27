@@ -51,7 +51,8 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
     
     for phase in ['train', 'val']:
 
-        labels, distances = [], []
+        labels_u, distances_u = [], []
+        labels_m, distances_m = [], []
         qtriplet_loss_sum = 0.0
 
         if phase == 'train':
@@ -78,13 +79,13 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                     embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     if embs_u is not None:
                         anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
-                        print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
+                        # print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
                     else:
                         continue
                     embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase)
                     if embs_m is not None:
                         anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
-                        print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
+                        # print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
 
                     else:
                         continue
@@ -92,11 +93,11 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                     
                     embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
-                    print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
+                    # print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
          
                     embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase )
                     anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
-                    print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
+                    # print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
                 # anc_hard_img = anc_img[hard_triplets]
                 # pos_hard_img = pos_img[hard_triplets]
                 # neg_hard_img = neg_img[hard_triplets]
@@ -113,17 +114,17 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                     qtriplet_loss.backward()
                     optimizer.step()
 
-                distances.append(pos_dist_u.data.cpu().numpy())
-                labels.append(np.full(pos_dist_u.size(0), 1 ))
+                distances_u.append(pos_dist_u.data.cpu().numpy())
+                labels_u.append(np.ones(pos_dist_u.size(0)))
 
-                distances.append(neg_dist_u.data.cpu().numpy())
-                labels.append(np.full(neg_dist_u.size(0) , -1 ))
+                distances_u.append(neg_dist_u.data.cpu().numpy())
+                labels_u.append(np.zeros(neg_dist_u.size(0)))
 
-                distances.append(pos_dist_m.data.cpu().numpy())
-                labels.append(np.full(pos_dist_m.size(0) , 2 ))
+                distances_m.append(pos_dist_m.data.cpu().numpy())
+                labels_m.append(np.ones(pos_dist_m.size(0)))
 
-                distances.append(neg_dist_m.data.cpu().numpy())
-                labels.append(np.full(neg_dist_m.size(0) , -2 ))
+                distances_m.append(neg_dist_m.data.cpu().numpy())
+                labels_m.append(np.zeros(neg_dist_m.size(0)))
 
                 qtriplet_loss_sum += qtriplet_loss.item()
 
@@ -135,27 +136,35 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
     
         avg_qtriplet_loss = qtriplet_loss_sum / data_size[phase]
 
-        labels = np.array([sublabel for label in labels for sublabel in label])
+        labels_u = np.array([sublabel for label in labels_u for sublabel in label])
         
-        distances = np.array([subdist for dist in distances for subdist in dist])
+        distances_u = np.array([subdist for dist in distances_u for subdist in dist])
 
-        tpr, fpr, accuracy, val, val_std, far = evaluate(distances, labels)
+        labels_m = np.array([sublabel for label in labels_m for sublabel in label])
+        
+        distances_m = np.array([subdist for dist in distances_m for subdist in dist])
+
+        tpr_u, fpr_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
+        tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_u, labels_u)
         
         print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_qtriplet_loss))
         
-        print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
+        print('  {} set - Accuracy (unmasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
 
+        print('  {} set - Accuracy (masked)          = {:.8f}'.format(phase, np.mean(accuracy_m)))
      
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lr = '_'.join(map(str, scheduler.get_last_lr()))
 
-        write_csv(f'{logs_dir}/{phase}.csv', [time, epoch, np.mean(accuracy), avg_qtriplet_loss, batch_size, lr])
+        write_csv(f'{logs_dir}/{phase}.csv', [time, epoch, np.mean(accuracy_u), avg_qtriplet_loss, batch_size, lr, "unmasked"])
+        write_csv(f'{logs_dir}/{phase}.csv', [time, epoch, np.mean(accuracy_m), avg_qtriplet_loss, batch_size, lr , "masked"])
 
         if phase == 'val':
             save_last_checkpoint({'epoch': epoch,
                                   'state_dict': model.module.state_dict(),
                                   'optimizer_state': optimizer.state_dict(),
-                                  'accuracy': np.mean(accuracy),
+                                  'accuracy_m': np.mean(accuracy_m),
+                                  'accuracy_u': np.mean(accuracy_u),
                                   'loss': avg_qtriplet_loss
                                   },
                                   save_dir,
@@ -163,14 +172,16 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
             save_if_best({'epoch': epoch,
                           'state_dict': model.module.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
-                          'accuracy': np.mean(accuracy),
+                          'accuracy_m': np.mean(accuracy_m),
+                          'accuracy_u': np.mean(accuracy_u),
                           'loss': avg_qtriplet_loss
                           }, 
-                          np.mean(accuracy),
+                          np.mean(accuracy_m),
                           save_dir,
                           best_ckpt_name)
         else:
-            plot_roc(fpr, tpr, figure_name='./{}/roc_valid_epoch_{}.png'.format(logs_dir,epoch))    
+            plot_roc(fpr_u, tpr_u, figure_name='{}/roc_unmasked_valid_epoch_{}.png'.format(logs_dir,epoch))    
+            plot_roc(fpr_m, tpr_m, figure_name='{}/roc_masked_valid_epoch_{}.png'.format(logs_dir,epoch))    
 
 if __name__ == '__main__':
 

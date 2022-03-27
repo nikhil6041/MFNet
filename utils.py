@@ -286,7 +286,7 @@ def init_log_just_created(path):
 
 def init_log_line(path):
     with open(path, 'w') as f:
-        f.write('time,epoch,acc,loss,layers,bs,lr\n')
+        f.write('time,epoch,acc,loss,bs,lr,img_type\n')
 
 
 class VisdomLinePlotter(object):
