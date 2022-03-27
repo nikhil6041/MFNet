@@ -137,7 +137,7 @@ def train_valid_triplet( model, optimizer, trip_loss, margin, scheduler, epoch, 
                           save_dir,
                           best_ckpt_name)
         else:
-            plot_roc(fpr, tpr, figure_name='./{}/roc_valid_epoch_{}.png'.format(logs_dir,epoch))    
+            plot_roc(fpr, tpr, figure_name='{}/roc_valid_epoch_{}.png'.format(logs_dir,epoch))    
 
 if __name__ == '__main__':
 
