@@ -3,7 +3,7 @@ from scipy import interpolate
 from sklearn.model_selection import KFold
 
 
-def evaluate(distances, labels, nrof_folds=10):
+def evaluate(distances, labels, nrof_folds=5):
     '''
         This function does the calculation of usefule metrics which we need to find out tpr,fpr , accuracy and other metrics with different thresholds applied
     '''
