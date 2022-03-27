@@ -13,7 +13,7 @@ from matplotlib.ticker import MaxNLocator
 import cv2
 import time
 from model import FaceNetModel
-from loss import TripletLoss
+from loss import TripletLoss,QuadTripletLoss
 from torch.nn.modules.distance import PairwiseDistance
 from eval_metrics import evaluate
 
@@ -367,3 +367,72 @@ def eval_facenet_model(model,dataloader,phase,margin,data_size):
     print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_triplet_loss))
     print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
 
+def eval_quad_facenet_model(model,dataloader,phase,a1,a2,a3,a4,data_size):
+
+    model.eval()
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    qtrip_loss = QuadTripletLoss(a1,a2,a3,a4).to(device)
+    l2_dist = PairwiseDistance(2)
+    labels_u, distances_u = [], []
+    labels_m, distances_m = [], []
+    qtriplet_loss_sum = 0.0
+   
+    for _, batch_sample in enumerate(dataloader[phase]):
+
+        anc_img_orig = batch_sample['anc_img_orig'].to(device)
+        pos_img_orig = batch_sample['pos_img_orig'].to(device)
+        neg_img_orig = batch_sample['neg_img_orig'].to(device)
+        anc_img_mask = batch_sample['anc_img_mask'].to(device)
+        pos_img_mask = batch_sample['pos_img_mask'].to(device)
+        neg_img_mask = batch_sample['neg_img_mask'].to(device)
+
+
+
+        with torch.no_grad():
+
+            # anc_embed, pos_embed and neg_embed are encoding(embedding) of image
+            anc_embed_u, pos_embed_u, neg_embed_u  = model(anc_img_orig), model(pos_img_orig), model(neg_img_orig)
+            anc_embed_m, pos_embed_m, neg_embed_m  = model(anc_img_mask), model(pos_img_mask), model(neg_img_mask)
+            
+            qtriplet_loss = qtrip_loss.forward( anc_embed_u , pos_embed_u , neg_embed_u , anc_embed_m , pos_embed_m , neg_embed_m )
+
+            pos_dist_u = l2_dist.forward(anc_embed_u, pos_embed_u)
+            neg_dist_u = l2_dist.forward(anc_embed_u, neg_embed_u)
+
+            pos_dist_m = l2_dist.forward(anc_embed_m, pos_embed_m)
+            neg_dist_m = l2_dist.forward(anc_embed_m, neg_embed_m)
+            
+            distances_u.append(pos_dist_u.data.cpu().numpy())
+            labels_u.append(np.ones(pos_dist_u.size(0)))
+
+            distances_u.append(neg_dist_u.data.cpu().numpy())
+            labels_u.append(np.zeros(neg_dist_u.size(0)))
+
+            distances_m.append(pos_dist_m.data.cpu().numpy())
+            labels_m.append(np.ones(pos_dist_m.size(0)))
+
+            distances_m.append(neg_dist_m.data.cpu().numpy())
+            labels_m.append(np.zeros(neg_dist_m.size(0)))
+
+            qtriplet_loss_sum += qtriplet_loss.item()
+
+    avg_qtriplet_loss = qtriplet_loss_sum / data_size[phase]
+
+    labels_u = np.array([sublabel for label in labels_u for sublabel in label])
+    
+    distances_u = np.array([subdist for dist in distances_u for subdist in dist])
+
+    labels_m = np.array([sublabel for label in labels_m for sublabel in label])
+    
+    distances_m = np.array([subdist for dist in distances_m for subdist in dist])
+
+    tpr_u, fpr_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
+    tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
+    
+    print('  {} set - QuadTriplet Loss       = {:.8f}'.format(phase, avg_qtriplet_loss))
+    
+    print('  {} set - Accuracy (unmasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
+
+    print('  {} set - Accuracy (masked)          = {:.8f}'.format(phase, np.mean(accuracy_m)))

@@ -14,7 +14,7 @@ from dataset import get_dataloader_quadtriplets
 from eval_metrics import evaluate, plot_roc
 from loss import QuadTripletLoss
 from model import FaceNetModel
-from utils import ModelSaver, init_log_just_created,write_csv,eval_facenet_model
+from utils import ModelSaver, eval_quad_facenet_model, init_log_just_created,write_csv,eval_facenet_model
 from pprint import pprint as ppt
 
 l2_dist = PairwiseDistance(2)
@@ -45,7 +45,10 @@ def get_triplets(anc_embed,pos_embed,neg_embed,margin,phase):
     pos_hard_embed = pos_embed[hard_triplets]
     neg_hard_embed = neg_embed[hard_triplets]
 
-    return anc_hard_embed,pos_hard_embed,neg_hard_embed,pos_dist,neg_dist
+    if anc_hard_embed.dim() == 2 and pos_hard_embed.dim() == 2 and neg_hard_embed.dim() == 2:
+        return anc_hard_embed,pos_hard_embed,neg_hard_embed,pos_dist,neg_dist
+    else:
+        return None
 
 def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
     
@@ -79,13 +82,13 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                     embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     if embs_u is not None:
                         anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
-                        # print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
+                        print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
                     else:
                         continue
                     embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase)
                     if embs_m is not None:
                         anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
-                        # print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
+                        print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
 
                     else:
                         continue
@@ -93,11 +96,11 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                     
                     embs_u = get_triplets(anc_embed_u , pos_embed_u , neg_embed_u , alpha1 ,phase )
                     anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u  , pos_dist_u , neg_dist_u = embs_u
-                    # print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
+                    print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
          
                     embs_m = get_triplets(anc_embed_m , pos_embed_m , neg_embed_m , alpha4 , phase )
                     anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m, pos_dist_m , neg_dist_m = embs_m
-                    # print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
+                    print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
                 # anc_hard_img = anc_img[hard_triplets]
                 # pos_hard_img = pos_img[hard_triplets]
                 # neg_hard_img = neg_img[hard_triplets]
@@ -106,8 +109,27 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                 # model.module.forward_classifier(anc_hard_img)
                 # model.module.forward_classifier(pos_hard_img)
                 # model.module.forward_classifier(neg_hard_img)
+                if anc_hard_embed_u.size(dim = 0) == anc_hard_embed_m.size(dim = 0) == pos_hard_embed_u.size(dim=0) == pos_hard_embed_m.size(dim=0) == neg_hard_embed_u.size(dim=0) == neg_hard_embed_m.size(dim=0):
+                    qtriplet_loss = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
 
-                qtriplet_loss = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
+                else:
+                    l = [anc_hard_embed_u.size(dim = 0), anc_hard_embed_m.size(dim = 0) , pos_hard_embed_u.size(dim=0) , pos_hard_embed_m.size(dim=0) , neg_hard_embed_u.size(dim=0) , neg_hard_embed_m.size(dim=0)]
+                    ln = min(l)
+                    if ln > 0:
+                        anc_hard_embed_u = anc_hard_embed_u[:ln]
+                        anc_hard_embed_m = anc_hard_embed_m[:ln]
+                        pos_hard_embed_u = pos_hard_embed_u[:ln]
+                        pos_hard_embed_m = pos_hard_embed_m[:ln]
+                        neg_hard_embed_u = neg_hard_embed_u[:ln]
+                        neg_hard_embed_m = neg_hard_embed_m[:ln]
+
+                        print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
+
+                        print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
+                        qtriplet_loss = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
+
+                    else:
+                        continue
 
                 if phase == 'train':
                     optimizer.zero_grad()
@@ -145,9 +167,9 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
         distances_m = np.array([subdist for dist in distances_m for subdist in dist])
 
         tpr_u, fpr_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
-        tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_u, labels_u)
+        tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
         
-        print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_qtriplet_loss))
+        print('  {} set - QuadTriplet Loss       = {:.8f}'.format(phase, avg_qtriplet_loss))
         
         print('  {} set - Accuracy (unmasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
 
@@ -161,7 +183,7 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
 
         if phase == 'val':
             save_last_checkpoint({'epoch': epoch,
-                                  'state_dict': model.module.state_dict(),
+                                  'state_dict': model.state_dict(),
                                   'optimizer_state': optimizer.state_dict(),
                                   'accuracy_m': np.mean(accuracy_m),
                                   'accuracy_u': np.mean(accuracy_u),
@@ -170,7 +192,7 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , alpha4, sche
                                   save_dir,
                                   last_ckpt_name)
             save_if_best({'epoch': epoch,
-                          'state_dict': model.module.state_dict(),
+                          'state_dict': model.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
                           'accuracy_m': np.mean(accuracy_m),
                           'accuracy_u': np.mean(accuracy_u),
@@ -279,5 +301,5 @@ if __name__ == '__main__':
         train_valid_quadtriplet( model, optimizer, qtriplet_loss, alpha1 , alpha4, scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
-    eval_facenet_model(model,data_loaders,phase='test',margin= (alpha1 + alpha2 + alpha3 + alpha4 )/4 ,data_size=data_size)
+    eval_quad_facenet_model(model,data_loaders,'test',alpha1 , alpha2 , alpha3 , alpha4  ,data_size=data_size)
 

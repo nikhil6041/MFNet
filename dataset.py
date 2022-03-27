@@ -28,9 +28,13 @@ class TripletFaceDataset(Dataset):
             face_classes = dict()
 
             for label in os.listdir(root_dir):
+               
                 if label not in face_classes.keys():
+                  
                     vals = list(os.listdir(os.path.join(root_dir,label)))
-                    face_classes[label] = vals
+                  
+                    if len(vals) >= 10:
+                        face_classes[label] = vals
 
             return face_classes
 
@@ -50,19 +54,25 @@ class TripletFaceDataset(Dataset):
 
             pos_class = np.random.choice(classes)
             neg_class = np.random.choice(classes)
+            
             while len(face_classes[pos_class]) < 2:
                 pos_class = np.random.choice(classes)
+            
             while pos_class == neg_class:
                 neg_class = np.random.choice(classes)
 
 
             if len(face_classes[pos_class]) == 2:
                 ianc, ipos = np.random.choice(2, size=2, replace=False)
+           
             else:
+               
                 ianc = np.random.randint(0, len(face_classes[pos_class]))
                 ipos = np.random.randint(0, len(face_classes[pos_class]))
+               
                 while ianc == ipos:
                     ipos = np.random.randint(0, len(face_classes[pos_class]))
+            
             ineg = np.random.randint(0, len(face_classes[neg_class]))
 
             anc_id = face_classes[pos_class][ianc]         
@@ -177,12 +187,21 @@ class QuadTripletFaceDataset(Dataset):
         face_classes = dict()
 
         for label in os.listdir(root_dir):
+           
             if label not in face_classes.keys() and  type_of_image == "masked":
+           
                 vals = list(os.listdir(os.path.join(root_dir,label)))
-                face_classes[label] = vals
+           
+                if len(vals) >= 10:
+                    face_classes[label] = vals
+           
             elif type_of_image == "original" and label in self.face_classes_masked:
+           
                 vals = list(os.listdir(os.path.join(root_dir,label)))
-                face_classes[label] = vals
+           
+                if len(vals) >= 10:
+                    face_classes[label] = vals
+        
         return face_classes
 
 
