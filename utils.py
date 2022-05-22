@@ -363,9 +363,17 @@ def eval_facenet_model(model,dataloader,phase,margin,data_size):
     labels = np.array([sublabel for label in labels for sublabel in label])
     distances = np.array([subdist for dist in distances for subdist in dist])
 
-    tpr, fpr, accuracy, val, val_std, far = evaluate(distances, labels)
+    precision , recall , f1_score , accuracy, val, val_std, far = evaluate(distances, labels)
+
     print('  {} set - Triplet Loss       = {:.8f}'.format(phase, avg_triplet_loss))
+  
     print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
+  
+    print('  {} set - Precision          = {:.8f}'.format(phase,precision ))
+  
+    print('  {} set - Recall          = {:.8f}'.format(phase, recall ))
+  
+    print('  {} set - F1 score         = {:.8f}'.format(phase, f1_score ))
 
 def eval_quad_facenet_model(model,dataloader,phase,a1,a2,a3,a4,data_size):
 
@@ -427,12 +435,20 @@ def eval_quad_facenet_model(model,dataloader,phase,a1,a2,a3,a4,data_size):
     labels_m = np.array([sublabel for label in labels_m for sublabel in label])
     
     distances_m = np.array([subdist for dist in distances_m for subdist in dist])
-
-    tpr_u, fpr_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
-    tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
+    
+    precision_u , recall_u , f1_score_u , accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
+    precision_m , recall_m , f1_score_m , accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
     
     print('  {} set - QuadTriplet Loss       = {:.8f}'.format(phase, avg_qtriplet_loss))
     
-    print('  {} set - Accuracy (unmasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
-
-    print('  {} set - Accuracy (masked)          = {:.8f}'.format(phase, np.mean(accuracy_m)))
+    print('  {} set - Accuracy (UnMasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
+    print('  {} set - Accuracy (Masked)          = {:.8f}'.format(phase, np.mean(accuracy_m)))
+    
+    print('  {} set - Precision (UnMasked)         = {:.8f}'.format(phase,precision_u ))
+    print('  {} set - Precision (Masked)         = {:.8f}'.format(phase,precision_m ))
+  
+    print('  {} set - Recall  (UnMasked)        = {:.8f}'.format(phase, recall_u ))
+    print('  {} set - Recall  (Masked)        = {:.8f}'.format(phase, recall_m ))
+  
+    print('  {} set - F1 score (UnMasked)        = {:.8f}'.format(phase, f1_score_u ))
+    print('  {} set - F1 score (Masked)        = {:.8f}'.format(phase, f1_score_m ))

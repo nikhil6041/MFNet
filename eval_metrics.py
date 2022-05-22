@@ -10,14 +10,14 @@ def evaluate(distances, labels, nrof_folds=5):
 
     thresholds = np.arange(0.3, 5, 0.1)
     ## calculation of tpr , fpr and accuracy from the roc curve
-    tpr, fpr, accuracy = calculate_roc(thresholds, distances,
+    pre , rec , f1_s , accuracy = calculate_roc(thresholds, distances,
                                        labels, nrof_folds=nrof_folds)
 
     thresholds = np.arange(0, 30, 0.001)
     ## calculation of variance , standard deviation and false acceptance rate 
     val, val_std, far = calculate_val(thresholds, distances,
                                       labels, 1e-3, nrof_folds=nrof_folds)
-    return tpr, fpr, accuracy, val, val_std, far
+    return pre , rec , f1_s , accuracy, val, val_std, far
 
 
 def calculate_roc(thresholds, distances, labels, nrof_folds=10):
@@ -29,8 +29,9 @@ def calculate_roc(thresholds, distances, labels, nrof_folds=10):
     k_fold = KFold(n_splits=nrof_folds, shuffle=False)  ## initializing the KFold split 
 
     ## initializing numpy arrays for calculation of tpr,fpr and accuracy
-    tprs = np.zeros((nrof_folds, nrof_thresholds))  
-    fprs = np.zeros((nrof_folds, nrof_thresholds))
+    precision = np.zeros((nrof_folds, nrof_thresholds))  
+    recall = np.zeros((nrof_folds, nrof_thresholds))
+    f1_score = np.zeros((nrof_folds, nrof_thresholds))
     accuracy = np.zeros((nrof_folds))
 
     ## creating and indices array for the list of pairs
@@ -43,23 +44,24 @@ def calculate_roc(thresholds, distances, labels, nrof_folds=10):
         
         ## finding the best threshold index
         for threshold_idx, threshold in enumerate(thresholds):
-            _, _, acc_train[threshold_idx] = calculate_accuracy(threshold, distances[train_set], labels[train_set])
+            _, _, _, acc_train[threshold_idx] = calculate_accuracy(threshold, distances[train_set], labels[train_set])
         
         best_threshold_index = np.argmax(acc_train)
         
         ## calcuating the tpr,fpr for the given fold
         for threshold_idx, threshold in enumerate(thresholds):
-            tprs[fold_idx, threshold_idx], fprs[fold_idx, threshold_idx], _ = calculate_accuracy(threshold,
+            precision[fold_idx, threshold_idx], recall[fold_idx, threshold_idx],f1_score[fold_idx,threshold_idx], _ = calculate_accuracy(threshold,
                                                                                                  distances[test_set],
                                                                                                  labels[test_set])
         ## calcuating the accuracy for the given fold
-        _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], distances[test_set],
+        _, _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], distances[test_set],
                                                       labels[test_set])
 
-        tpr = np.mean(tprs, 0)
-        fpr = np.mean(fprs, 0)
+    pre = np.mean(precision, 0)
+    rec = np.mean(recall, 0)
+    f1_s = np.mean(f1_score, 0)
 
-    return tpr, fpr, accuracy
+    return pre, rec, f1_s, accuracy
 
 def calculate_accuracy(threshold, dist, actual_issame):
     """
@@ -71,10 +73,12 @@ def calculate_accuracy(threshold, dist, actual_issame):
     tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame))) ## calculation of the true negatives
     fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame)) ## calculation of the false negatives
 
-    tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn) ## finding out the true positive rate
-    fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn) ## finding out the false positive rate
-    acc = float(tp + tn) / dist.size
-    return tpr, fpr, acc
+    precision = 0 if (tp + fp == 0) else float(tp) / float(tp + fp) ## finding out the precision
+    recall = 0 if (tp + fn == 0) else float(tp) / float(tp + fn) ## finding out the recall
+    f1_score = 2*(precision*recall)/ (precision + recall)
+
+    accuracy = float(tp + tn) / dist.size
+    return precision, recall,f1_score, accuracy
 
 
 def calculate_val(thresholds, distances, labels, far_target=1e-3, nrof_folds=10):
