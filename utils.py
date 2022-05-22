@@ -369,12 +369,12 @@ def eval_facenet_model(model,dataloader,phase,margin,data_size):
   
     print('  {} set - Accuracy           = {:.8f}'.format(phase, np.mean(accuracy)))
   
-    print('  {} set - Precision          = {:.8f}'.format(phase,precision ))
+    print(f'{phase} set - Precision = {precision}')
   
-    print('  {} set - Recall          = {:.8f}'.format(phase, recall ))
+    print(f'{phase} set - Recall  = {recall}')
   
-    print('  {} set - F1 score         = {:.8f}'.format(phase, f1_score ))
-
+    print(f'{phase} set - F1 Score = {f1_score}')
+  
 def eval_quad_facenet_model(model,dataloader,phase,a1,a2,a3,a4,data_size):
 
     model.eval()
@@ -441,14 +441,14 @@ def eval_quad_facenet_model(model,dataloader,phase,a1,a2,a3,a4,data_size):
     
     print('  {} set - QuadTriplet Loss       = {:.8f}'.format(phase, avg_qtriplet_loss))
     
-    print('  {} set - Accuracy (UnMasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
-    print('  {} set - Accuracy (Masked)          = {:.8f}'.format(phase, np.mean(accuracy_m)))
+    print(f'{phase} set - Accuracy (UnMasked) = { np.mean(accuracy_u)}')
+    print(f'{phase} set - Accuracy (Masked) = { np.mean(accuracy_m)}')
     
-    print('  {} set - Precision (UnMasked)         = {:.8f}'.format(phase,precision_u ))
-    print('  {} set - Precision (Masked)         = {:.8f}'.format(phase,precision_m ))
-  
-    print('  {} set - Recall  (UnMasked)        = {:.8f}'.format(phase, recall_u ))
-    print('  {} set - Recall  (Masked)        = {:.8f}'.format(phase, recall_m ))
-  
-    print('  {} set - F1 score (UnMasked)        = {:.8f}'.format(phase, f1_score_u ))
-    print('  {} set - F1 score (Masked)        = {:.8f}'.format(phase, f1_score_m ))
+    print(f'{phase} set - Precision (UnMasked) = {precision_u}')
+    print(f'{phase} set - Precision (Masked) = {precision_m}') 
+
+    print(f'{phase} set - Recall (UnMasked) = {recall_u}')
+    print(f'{phase} set - Recall (Masked) = {recall_m}') 
+
+    print(f'{phase} set - F1 Score (UnMasked) = {f1_score_u}')
+    print(f'{phase} set - F1 Score (Masked) = {f1_score_m}') 

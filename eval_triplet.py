@@ -105,9 +105,10 @@ if __name__ == '__main__':
     data_loaders, data_size = get_dataloader_triplets(root_dir, val_size,test_size,
                                                  num_triplets,
                                                  batch_size, num_workers)
-    ckpt_path = save_dir + best_ckpt_name
+    print(save_dir + best_ckpt_name)
+    ckpt_path = torch.load(save_dir + best_ckpt_name)
 
-    model.load_state_dict(ckpt_path)
+    model.load_state_dict(ckpt_path['state_dict'])
     
     eval_facenet_model(model,data_loaders,phase='train',margin=margin,data_size=data_size)
     eval_facenet_model(model,data_loaders,phase='val',margin=margin,data_size=data_size)
