@@ -90,6 +90,32 @@ quadtriplet_model_surgical:
     alpha3 : 0.05
     alpha4 : 0.05
     logs_dir: '/content/drive/MyDrive/MFNet/logs_quadtriplet_model_surgical'
+triplet_meauh_model_surgical:
+  dataset:
+    num_triplets: 2000
+    batch_size: 64
+    num_workers: 8
+    root_dir_original: '/content/drive/MyDrive/Labelled Faces In The Wild Dataset/lfw-deepfunneled/lfw-deepfunneled_cropped'
+    root_dir_masked: '/content/drive/MyDrive/Labelled Faces In The Wild Dataset/lfw-deepfunneled/lfw-deepfunneled_masked_surgical_cropped'
+    save_dir: '/content/drive/MyDrive/MFNet/checkpoints'
+    val_size: 0.2
+    test_size: 0.2
+  model:
+    pretrain_checkpoint: 'casia-webface'
+    last_ckpt_name: 'triplet_meauh_model_surgical_last.pt'
+    best_ckpt_name: 'triplet_meauh_model_surgical_best.pt'
+    fc_only: False
+    except_fc: True
+    train_all: True
+  training_params:
+    num_epochs: 10
+    step_size: 50
+    learning_rate: 0.001
+    alpha1 : 0.05
+    alpha2 : 0.05
+    alpha3 : 0.05
+    alpha4 : 0.05
+    logs_dir: '/content/drive/MyDrive/MFNet/logs_triplet_meauh_model_surgical'
 quadtriplet_model_KN95:
   dataset:
     num_triplets: 2000
