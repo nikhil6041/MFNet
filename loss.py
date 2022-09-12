@@ -1,6 +1,6 @@
 import torch
 from torch.nn.modules.distance import PairwiseDistance
-
+from torch.nn import MSELoss
 
 class TripletLoss(torch.nn.Module):
 
@@ -57,5 +57,29 @@ class QuadTripletLoss(torch.nn.Module):
         loss_m_m = torch.mean(hinge_dist_m_m)
 
         loss = loss_u_u + loss_u_m + loss_m_u + loss_m_m
+
+        return loss
+
+class TripletLoss_meauh(torch.nn.Module):
+
+    def __init__(self, alpha1):
+        
+        super(TripletLoss_meauh, self).__init__()
+        
+        self.alpha1 = alpha1
+        self.l1 = TripletLoss(alpha1)
+
+    def forward(self, anchor, positive, negative, anchor_masked):
+        
+        pos_dist_u_u = self.l1.pdist.forward(anchor, positive)     # distance b/w anchor image and positive image
+        neg_dist_u_u = self.l1.pdist.forward(anchor, negative)     # distance b/w anchor image and negaive image
+
+        hinge_dist_u_u = torch.clamp(self.alpha1 + pos_dist_u_u - neg_dist_u_u, min=0.0)
+         
+        loss_u_u = torch.mean(hinge_dist_u_u) 
+
+        mse_loss = MSELoss(anchor,anchor_masked)    # MSE loss b/w anchor and anchor masked images
+        
+        loss = loss_u_u + mse_loss
 
         return loss
