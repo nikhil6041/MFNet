@@ -78,7 +78,7 @@ class TripletLoss_meauh(torch.nn.Module):
          
         loss_u_u = torch.mean(hinge_dist_u_u) 
 
-        mse_loss = MSELoss(anchor,anchor_masked)    # MSE loss b/w anchor and anchor masked images
+        mse_loss = MSELoss()(anchor,anchor_masked)    # MSE loss b/w anchor and anchor masked images
         
         loss = loss_u_u + mse_loss
 
