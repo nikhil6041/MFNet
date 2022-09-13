@@ -103,7 +103,7 @@ def train_valid_triplet_meauh( model, optimizer, qtrip_loss, alpha1 , scheduler,
                     print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
 
                 if anc_hard_embed_u.size(dim = 0) == anc_hard_embed_m.size(dim = 0) == pos_hard_embed_u.size(dim=0) == pos_hard_embed_m.size(dim=0) == neg_hard_embed_u.size(dim=0) == neg_hard_embed_m.size(dim=0):
-                    triplet_meahu = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
+                    triplet_meahu = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m )
 
                 else:
                     l = [anc_hard_embed_u.size(dim = 0), anc_hard_embed_m.size(dim = 0) , pos_hard_embed_u.size(dim=0) , pos_hard_embed_m.size(dim=0) , neg_hard_embed_u.size(dim=0) , neg_hard_embed_m.size(dim=0)]
