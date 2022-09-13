@@ -444,11 +444,11 @@ def eval_quad_facenet_model(model,dataloader,phase,a1,a2,a3,a4,data_size):
     print(f'{phase} set - Accuracy (UnMasked) = { np.mean(accuracy_u)}')
     print(f'{phase} set - Accuracy (Masked) = { np.mean(accuracy_m)}')
     
-    print(f'{phase} set - Precision (UnMasked) = {precision_u}')
-    print(f'{phase} set - Precision (Masked) = {precision_m}') 
+    print(f'{phase} set - Precision (UnMasked) = {np.mean(precision_u)}')
+    print(f'{phase} set - Precision (Masked) = {np.mean(precision_m)}') 
 
-    print(f'{phase} set - Recall (UnMasked) = {recall_u}')
-    print(f'{phase} set - Recall (Masked) = {recall_m}') 
+    print(f'{phase} set - Recall (UnMasked) = {np.mean(recall_u)}')
+    print(f'{phase} set - Recall (Masked) = {np.mean(recall_m)}') 
 
-    print(f'{phase} set - F1 Score (UnMasked) = {f1_score_u}')
-    print(f'{phase} set - F1 Score (Masked) = {f1_score_m}') 
+    print(f'{phase} set - F1 Score (UnMasked) = {np.mean(f1_score_u)}')
+    print(f'{phase} set - F1 Score (Masked) = {np.mean(f1_score_m)}') 
