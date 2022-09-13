@@ -50,7 +50,7 @@ def get_triplets(anc_embed,pos_embed,neg_embed,margin,phase):
     else:
         return None
 
-def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
+def train_valid_triplet_meauh( model, optimizer, qtrip_loss, alpha1 , scheduler, epoch, dataloaders , batch_size , data_size , save_dir , logs_dir, last_ckpt_name , best_ckpt_name ):
     
     for phase in ['train', 'val']:
 
@@ -103,7 +103,7 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , scheduler, e
                     print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
 
                 if anc_hard_embed_u.size(dim = 0) == anc_hard_embed_m.size(dim = 0) == pos_hard_embed_u.size(dim=0) == pos_hard_embed_m.size(dim=0) == neg_hard_embed_u.size(dim=0) == neg_hard_embed_m.size(dim=0):
-                    triplet_meahu = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
+                    triplet_meahu = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m )
 
                 else:
                     l = [anc_hard_embed_u.size(dim = 0), anc_hard_embed_m.size(dim = 0) , pos_hard_embed_u.size(dim=0) , pos_hard_embed_m.size(dim=0) , neg_hard_embed_u.size(dim=0) , neg_hard_embed_m.size(dim=0)]
@@ -119,7 +119,7 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , scheduler, e
                         print(f"Unmasked anc {anc_hard_embed_u.size()} , pos {pos_hard_embed_u.size()} , neg {neg_hard_embed_u.size()}")
 
                         print(f"Masked anc {anc_hard_embed_m.size()} , pos {pos_hard_embed_m.size()} , neg {neg_hard_embed_m.size()}")
-                        triplet_meahu = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m , pos_hard_embed_m , neg_hard_embed_m )
+                        triplet_meahu = qtrip_loss.forward( anc_hard_embed_u , pos_hard_embed_u , neg_hard_embed_u , anc_hard_embed_m )
 
                     else:
                         continue
@@ -159,10 +159,10 @@ def train_valid_quadtriplet( model, optimizer, qtrip_loss, alpha1 , scheduler, e
         
         distances_m = np.array([subdist for dist in distances_m for subdist in dist])
 
-        tpr_u, fpr_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
-        tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
+        tpr_u, fpr_u,f1_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
+        tpr_m, fpr_m,f1_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
         
-        print('  {} set - QuadTriplet Loss       = {:.8f}'.format(phase, avg_triplet_meahu))
+        print('  {} set - Triplet_meauh Loss       = {:.8f}'.format(phase, avg_triplet_meahu))
         
         print('  {} set - Accuracy (unmasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
 
@@ -291,7 +291,7 @@ if __name__ == '__main__':
                                                  num_triplets,
                                                  batch_size, num_workers)
 
-        train_valid_quadtriplet( model, optimizer, triplet_meahu, alpha1 , scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
+        train_valid_triplet_meauh( model, optimizer, triplet_meahu, alpha1 , scheduler, epoch, data_loaders , batch_size , data_size , save_dir ,logs_dir, last_ckpt_name , best_ckpt_name )
         print(f'  Execution time                 = {time.time() - time0}')
     print(120 * '=')
     eval_quad_facenet_model(model,data_loaders,'test',alpha1 , alpha2 , alpha3 , alpha4  ,data_size=data_size)
