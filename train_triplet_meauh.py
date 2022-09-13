@@ -159,10 +159,10 @@ def train_valid_triplet_meauh( model, optimizer, qtrip_loss, alpha1 , scheduler,
         
         distances_m = np.array([subdist for dist in distances_m for subdist in dist])
 
-        tpr_u, fpr_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
-        tpr_m, fpr_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
+        tpr_u, fpr_u,f1_u, accuracy_u, val_u, val_std_u, far_u = evaluate(distances_u, labels_u)
+        tpr_m, fpr_m,f1_m, accuracy_m, val_m, val_std_m, far_m = evaluate(distances_m, labels_m)
         
-        print('  {} set - QuadTriplet Loss       = {:.8f}'.format(phase, avg_triplet_meahu))
+        print('  {} set - Triplet_meauh Loss       = {:.8f}'.format(phase, avg_triplet_meahu))
         
         print('  {} set - Accuracy (unmasked)          = {:.8f}'.format(phase, np.mean(accuracy_u)))
 
