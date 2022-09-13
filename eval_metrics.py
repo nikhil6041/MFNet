@@ -75,7 +75,7 @@ def calculate_accuracy(threshold, dist, actual_issame):
 
     precision = 0 if (tp + fp == 0) else float(tp) / float(tp + fp) ## finding out the precision
     recall = 0 if (tp + fn == 0) else float(tp) / float(tp + fn) ## finding out the recall
-    f1_score = 2*(precision*recall)/ (precision + recall)
+    f1_score = 2*(precision*recall )/ (precision + recall + 1e-9 )
 
     accuracy = float(tp + tn) / dist.size
     return precision, recall,f1_score, accuracy
